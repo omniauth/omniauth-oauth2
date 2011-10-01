@@ -13,7 +13,7 @@ module OmniAuth
     class OAuth2
       include OmniAuth::Strategy
 
-      args :client_id, :client_secret
+      args [:client_id, :client_secret]
 
       option :client_id, nil
       option :client_secret, nil
