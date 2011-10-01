@@ -18,6 +18,7 @@ module OmniAuth
       option :client_id, nil
       option :client_secret, nil
       option :client_options, {}
+      option :authorize_params, {}
 
       attr_accessor :access_token
 
