@@ -22,7 +22,7 @@ module OmniAuth
       attr_accessor :access_token
 
       def client
-        ::OAuth2::Client.new(options.client_id, options.client_secret, options.client_options)
+        ::OAuth2::Client.new(options.client_id, options.client_secret, options.client_options.inject({}){|h,(k,v)| h[k.to_sym] = v; h})
       end
 
       def callback_url
@@ -36,7 +36,7 @@ module OmniAuth
       end
 
       def request_phase
-        redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(options))
+        redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(options.authorize_params))
       end
 
       def callback_phase
