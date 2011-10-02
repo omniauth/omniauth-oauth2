@@ -19,6 +19,7 @@ module OmniAuth
       option :client_secret, nil
       option :client_options, {}
       option :authorize_params, {}
+      option :token_params, {}
 
       attr_accessor :access_token
 
@@ -61,7 +62,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params['code']
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(options))
+        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(options.token_params))
       rescue ::OAuth2::Error => e
         raise e.response.inspect
       end
