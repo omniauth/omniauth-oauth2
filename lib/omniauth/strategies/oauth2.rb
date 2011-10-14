@@ -19,8 +19,9 @@ module OmniAuth
       option :client_secret, nil
       option :client_options, {}
       option :authorize_params, {}
-      option :token_params, {}
       option :authorize_options, [:scope]
+      option :token_params, {}
+      option :token_options, []
 
       attr_accessor :access_token
 
@@ -44,6 +45,10 @@ module OmniAuth
 
       def authorize_params
         options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+      end
+
+      def token_params
+        options.token_params.merge(options.token_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
       end
 
       def callback_phase

@@ -13,7 +13,7 @@ describe OmniAuth::Strategies::OAuth2 do
     end
   end
 
-  describe 'authorize_params' do
+  describe '#authorize_params' do
     subject { fresh_strategy }
 
     it 'should include any authorize params passed in the :authorize_params option' do
@@ -24,6 +24,20 @@ describe OmniAuth::Strategies::OAuth2 do
     it 'should include top-level options that are marked as :authorize_options' do
       instance = subject.new('abc', 'def', :authorize_options => [:scope, :foo], :scope => 'bar', :foo => 'baz')
       instance.authorize_params.should == {'scope' => 'bar', 'foo' => 'baz'}
+    end
+  end
+
+  describe '#token_params' do
+    subject { fresh_strategy }
+
+    it 'should include any authorize params passed in the :authorize_params option' do
+      instance = subject.new('abc', 'def', :token_params => {:foo => 'bar', :baz => 'zip'})
+      instance.token_params.should == {'foo' => 'bar', 'baz' => 'zip'}
+    end
+
+    it 'should include top-level options that are marked as :authorize_options' do
+      instance = subject.new('abc', 'def', :token_options => [:scope, :foo], :scope => 'bar', :foo => 'baz')
+      instance.token_params.should == {'scope' => 'bar', 'foo' => 'baz'}
     end
   end
 end
