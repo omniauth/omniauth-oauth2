@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'omniauth', '1.0.0.alpha', :git => 'git://github.com/intridea/omniauth.git'
+gem 'omniauth', '1.0.0.pr2', :git => 'git://github.com/intridea/omniauth.git'
 # Specify your gem's dependencies in omniauth-oauth2.gemspec
 gemspec
 

@@ -20,6 +20,7 @@ module OmniAuth
       option :client_options, {}
       option :authorize_params, {}
       option :token_params, {}
+      option :authorize_options, [:scope]
 
       attr_accessor :access_token
 
@@ -38,7 +39,11 @@ module OmniAuth
       end
 
       def request_phase
-        redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(options.authorize_params))
+        redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
+      end
+
+      def authorize_params
+        options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
       end
 
       def callback_phase

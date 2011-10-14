@@ -12,4 +12,18 @@ describe OmniAuth::Strategies::OAuth2 do
       instance.client.options[:authorize_url].should == 'https://example.com'
     end
   end
+
+  describe 'authorize_params' do
+    subject { fresh_strategy }
+
+    it 'should include any authorize params passed in the :authorize_params option' do
+      instance = subject.new('abc', 'def', :authorize_params => {:foo => 'bar', :baz => 'zip'})
+      instance.authorize_params.should == {'foo' => 'bar', 'baz' => 'zip'}
+    end
+
+    it 'should include top-level options that are marked as :authorize_options' do
+      instance = subject.new('abc', 'def', :authorize_options => [:scope, :foo], :scope => 'bar', :foo => 'baz')
+      instance.authorize_params.should == {'scope' => 'bar', 'foo' => 'baz'}
+    end
+  end
 end
