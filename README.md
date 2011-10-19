@@ -18,7 +18,7 @@ subclass it and add a few extra methods like so:
 
     module OmniAuth
       module Strategies
-        class SomeSite
+        class SomeSite < OmniAuth::Strategies::OAuth2
           # Give your strategy a name.
           option :name, "some_site"
 
