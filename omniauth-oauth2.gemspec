@@ -3,7 +3,7 @@ require File.expand_path('../lib/omniauth-oauth2/version', __FILE__)
 
 Gem::Specification.new do |gem|
   gem.add_dependency 'hashie', '~> 1.2'
-  gem.add_dependency 'omniauth', '~> 1.0.0.beta1'
+  gem.add_dependency 'omniauth', '1.0.0.beta1'
   gem.add_dependency 'oauth2', '~> 0.5.0'
 
   gem.add_development_dependency 'rspec', '~> 2.6'
