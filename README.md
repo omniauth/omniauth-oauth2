@@ -14,7 +14,7 @@ info).
 To create an OmniAuth OAuth2 strategy using this gem, you can simply
 subclass it and add a few extra methods like so:
 
-    require 'omniauth-oauth'
+    require 'omniauth-oauth2'
 
     module OmniAuth
       module Strategies
