@@ -2,6 +2,7 @@ require 'cgi'
 require 'uri'
 require 'oauth2'
 require 'omniauth'
+require 'timeout'
 
 module OmniAuth
   module Strategies
