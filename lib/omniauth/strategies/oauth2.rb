@@ -60,7 +60,7 @@ module OmniAuth
         end
 
         self.access_token = build_access_token
-        self.access_token = client.auth_code.refresh_token(access_token.refresh_token) if access_token.expired?
+        self.access_token = access_token.refresh! if access_token.expired?
 
         super
       rescue ::OAuth2::Error, CallbackError => e
@@ -77,7 +77,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params['code']
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(options.token_params.to_hash(:symbolize_keys => true)))
+        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)))
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
