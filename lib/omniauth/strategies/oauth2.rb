@@ -27,7 +27,7 @@ module OmniAuth
       attr_accessor :access_token
 
       def client
-        ::OAuth2::Client.new(options.client_id, options.client_secret, options.client_options.inject({}){|h,(k,v)| h[k.to_sym] = v; h})
+        ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
       end
 
       def callback_url
@@ -74,6 +74,13 @@ module OmniAuth
       end
 
       protected
+
+      def deep_symbolize(hash)
+        hash.inject({}) do |h, (k,v)|
+          h[k.to_sym] = v.is_a?(Hash) ? deep_symbolize(v) : v
+          h
+        end
+      end
 
       def build_access_token
         verifier = request.params['code']
