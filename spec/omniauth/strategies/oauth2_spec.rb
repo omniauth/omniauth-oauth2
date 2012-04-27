@@ -11,6 +11,11 @@ describe OmniAuth::Strategies::OAuth2 do
       instance = subject.new(app, :client_options => {'authorize_url' => 'https://example.com'})
       instance.client.options[:authorize_url].should == 'https://example.com'
     end
+
+    it 'should set ssl options as connection options' do
+      instance = subject.new(app, :client_options => {'ssl' => {'ca_path' => 'foo'}})
+      instance.client.options[:connection_opts][:ssl] =~ {:ca_path => 'foo'}
+    end
   end
 
   describe '#authorize_params' do
