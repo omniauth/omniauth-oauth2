@@ -1,9 +1,5 @@
 # OmniAuth OAuth2
 
-**Note:** This gem is designed to work with the unreleased OmniAuth 1.0
-library. It will not be officially released on RubyGems.org until
-OmniAuth 1.0 is released.
-
 This gem contains a generic OAuth2 strategy for OmniAuth. It is meant to
 serve as a building block strategy for other strategies and not to be
 used independently (since it has no inherent way to gather uid and user
