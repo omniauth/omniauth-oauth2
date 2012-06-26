@@ -3,7 +3,7 @@ require File.expand_path('../lib/omniauth-oauth2/version', __FILE__)
 
 Gem::Specification.new do |gem|
   gem.add_dependency 'omniauth', '~> 1.0'
-  gem.add_dependency 'oauth2', '~> 0.6.0'
+  gem.add_dependency 'oauth2', '~> 0.7.0'
 
   gem.add_development_dependency 'rspec', '~> 2.7'
   gem.add_development_dependency 'rack-test'
