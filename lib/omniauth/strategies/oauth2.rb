@@ -47,7 +47,12 @@ module OmniAuth
       end
 
       def authorize_params
-        options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        if options.authorize_params[:state].to_s.empty?
+          options.authorize_params[:state] = 3.times.map{ rand.to_s[2..-1] }.reduce(&:concat)
+        end
+        params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        session['omniauth.state'] = params[:state]
+        params
       end
 
       def token_params
@@ -57,6 +62,9 @@ module OmniAuth
       def callback_phase
         if request.params['error'] || request.params['error_reason']
           raise CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri'])
+        end
+        if request.params['state'] != session.delete('omniauth.state')
+          raise CallbackError.new(nil, :csrf_detected)
         end
 
         self.access_token = build_access_token
