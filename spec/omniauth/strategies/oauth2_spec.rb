@@ -4,6 +4,14 @@ describe OmniAuth::Strategies::OAuth2 do
   def app; lambda{|env| [200, {}, ["Hello."]]} end
   let(:fresh_strategy){ Class.new(OmniAuth::Strategies::OAuth2) }
 
+  before do
+    OmniAuth.config.test_mode = true
+  end
+
+  after do
+    OmniAuth.config.test_mode = false
+  end
+
   describe '#client' do
     subject{ fresh_strategy }
 

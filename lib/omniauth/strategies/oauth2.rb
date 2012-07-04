@@ -51,6 +51,10 @@ module OmniAuth
           options.authorize_params[:state] = 3.times.map{ rand.to_s[2..-1] }.reduce(&:concat)
         end
         params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        if OmniAuth.config.test_mode
+          @env ||= {}
+          @env['rack.session'] ||= {}
+        end
         session['omniauth.state'] = params[:state]
         params
       end
