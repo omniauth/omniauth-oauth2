@@ -48,7 +48,8 @@ module OmniAuth
 
       def authorize_params
         if options.authorize_params[:state].to_s.empty?
-          options.authorize_params[:state] = 3.times.map{ rand.to_s[2..-1] }.reduce(&:concat)
+          require 'securerandom'
+          options.authorize_params[:state] = SecureRandom.hex(24)
         end
         params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
         if OmniAuth.config.test_mode
