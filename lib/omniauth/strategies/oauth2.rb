@@ -3,6 +3,7 @@ require 'uri'
 require 'oauth2'
 require 'omniauth'
 require 'timeout'
+require 'securerandom'
 
 module OmniAuth
   module Strategies
@@ -48,7 +49,6 @@ module OmniAuth
 
       def authorize_params
         if options.authorize_params[:state].to_s.empty?
-          require 'securerandom'
           options.authorize_params[:state] = SecureRandom.hex(24)
         end
         params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
