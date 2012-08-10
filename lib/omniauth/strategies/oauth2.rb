@@ -24,6 +24,7 @@ module OmniAuth
       option :authorize_options, [:scope]
       option :token_params, {}
       option :token_options, []
+      option :provider_ignores_state, false
 
       attr_accessor :access_token
 
@@ -68,7 +69,7 @@ module OmniAuth
         if request.params['error'] || request.params['error_reason']
           raise CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri'])
         end
-        if request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state')
+        if !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
           raise CallbackError.new(nil, :csrf_detected)
         end
 
