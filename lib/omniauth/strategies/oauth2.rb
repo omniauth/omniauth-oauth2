@@ -68,8 +68,11 @@ module OmniAuth
         if request.params['error'] || request.params['error_reason']
           raise CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri'])
         end
-        if request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state')
+        if request.params['state'] != session.delete('omniauth.state')
           raise CallbackError.new(nil, :csrf_detected)
+        end
+        if request.params['state'].to_s.empty?
+          log :warn, "An 'state' parameter is highly recommended for preventing CSRF attack. See http://tools.ietf.org/html/draft-ietf-oauth-v2-31#section-10.12 for more details."
         end
 
         self.access_token = build_access_token
