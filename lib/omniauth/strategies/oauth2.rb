@@ -25,6 +25,7 @@ module OmniAuth
       option :token_params, {}
       option :token_options, []
       option :auth_token_params, {}
+      option :provider_ignores_state, false
 
       attr_accessor :access_token
 
@@ -49,9 +50,7 @@ module OmniAuth
       end
 
       def authorize_params
-        if options.authorize_params[:state].to_s.empty?
-          options.authorize_params[:state] = SecureRandom.hex(24)
-        end
+        options.authorize_params[:state] = SecureRandom.hex(24)
         params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
         if OmniAuth.config.test_mode
           @env ||= {}
@@ -69,7 +68,7 @@ module OmniAuth
         if request.params['error'] || request.params['error_reason']
           raise CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri'])
         end
-        if request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state')
+        if !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
           raise CallbackError.new(nil, :csrf_detected)
         end
 
