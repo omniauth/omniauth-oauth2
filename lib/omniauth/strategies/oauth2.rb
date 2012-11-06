@@ -3,6 +3,7 @@ require 'uri'
 require 'oauth2'
 require 'omniauth'
 require 'timeout'
+require 'securerandom'
 
 module OmniAuth
   module Strategies
@@ -23,6 +24,8 @@ module OmniAuth
       option :authorize_options, [:scope]
       option :token_params, {}
       option :token_options, []
+      option :auth_token_params, {}
+      option :provider_ignores_state, false
 
       attr_accessor :access_token
 
@@ -47,7 +50,14 @@ module OmniAuth
       end
 
       def authorize_params
-        options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        options.authorize_params[:state] = SecureRandom.hex(24)
+        params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        if OmniAuth.config.test_mode
+          @env ||= {}
+          @env['rack.session'] ||= {}
+        end
+        session['omniauth.state'] = params[:state]
+        params
       end
 
       def token_params
@@ -57,6 +67,9 @@ module OmniAuth
       def callback_phase
         if request.params['error'] || request.params['error_reason']
           raise CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri'])
+        end
+        if !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
+          raise CallbackError.new(nil, :csrf_detected)
         end
 
         self.access_token = build_access_token
@@ -84,7 +97,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params['code']
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)))
+        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
