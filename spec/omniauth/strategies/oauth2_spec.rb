@@ -61,3 +61,20 @@ describe OmniAuth::Strategies::OAuth2 do
     end
   end
 end
+
+describe OmniAuth::Strategies::OAuth2::CallbackError do
+  let(:error){ Class.new(OmniAuth::Strategies::OAuth2::CallbackError) }
+  describe '#message' do
+    subject { error }
+    it "should include all of the attributes" do
+      instance = subject.new('error', 'description', 'uri')
+      instance.message.should =~ /error/
+      instance.message.should =~ /description/
+      instance.message.should =~ /uri/
+    end
+    it "should include all of the attributes" do
+      instance = subject.new(nil, :symbol)
+      instance.message.should == 'symbol'
+    end
+  end
+end
