@@ -50,7 +50,7 @@ module OmniAuth
       end
 
       def authorize_params
-        options.authorize_params[:state] = SecureRandom.hex(24)
+        options.authorize_params[:state] ||= SecureRandom.hex(24)
         params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
         if OmniAuth.config.test_mode
           @env ||= {}
