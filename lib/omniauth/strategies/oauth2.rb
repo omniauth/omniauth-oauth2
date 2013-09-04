@@ -110,6 +110,10 @@ module OmniAuth
           self.error_reason = error_reason
           self.error_uri = error_uri
         end
+
+        def message
+          [self.error, self.error_reason, self.error_uri].compact.join(' | ')
+        end
       end
     end
   end
