@@ -82,7 +82,7 @@ module OmniAuth
         fail!(:invalid_response, e)
       rescue ::Timeout::Error, ::Errno::ETIMEDOUT, Faraday::Error::TimeoutError => e
         fail!(:timeout, e)
-      rescue ::SocketError => e
+      rescue ::SocketError, Faraday::Error::ConnectionFailed => e
         fail!(:failed_to_connect, e)
       end
 
