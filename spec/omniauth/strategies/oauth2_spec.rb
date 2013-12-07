@@ -14,7 +14,7 @@ describe OmniAuth::Strategies::OAuth2 do
 
   describe '#client' do
     subject{ fresh_strategy }
- 
+
     it 'should be initialized with symbolized client_options' do
       instance = subject.new(app, :client_options => {'authorize_url' => 'https://example.com'})
       instance.client.options[:authorize_url].should == 'https://example.com'
@@ -59,6 +59,19 @@ describe OmniAuth::Strategies::OAuth2 do
     it 'should include top-level options that are marked as :authorize_options' do
       instance = subject.new('abc', 'def', :token_options => [:scope, :foo], :scope => 'bar', :foo => 'baz')
       instance.token_params.should == {'scope' => 'bar', 'foo' => 'baz'}
+    end
+  end
+
+  describe '#callback_phase' do
+    subject { fresh_strategy }
+    it "should call fail! with the client error received" do
+      instance = subject.new('abc', 'def')
+      instance.stub(:request) {
+        double('Request', { :params => {'error_reason' => 'user_denied', 'error' => 'access_denied'} } )
+      }
+
+      instance.should_receive(:fail!).with("user_denied", anything())
+      instance.callback_phase
     end
   end
 end
