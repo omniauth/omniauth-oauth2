@@ -72,7 +72,7 @@ module OmniAuth
 
         elsif !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
 
-          fail!(:csrf_detected, CallbackError.new(nil, :csrf_detected))
+          fail!(:csrf_detected, CallbackError.new(:csrf_detected, 'CSRF detected'))
 
         else
 
