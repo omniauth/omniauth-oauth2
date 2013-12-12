@@ -69,7 +69,7 @@ module OmniAuth
           raise CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri'])
         end
         if !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
-          raise CallbackError.new(nil, :csrf_detected)
+          raise CallbackError.new("CSRF detected", :csrf_detected)
         end
 
         self.access_token = build_access_token
