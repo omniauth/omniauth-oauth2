@@ -1,0 +1,9 @@
+gemfile:
+  - Gemfile
+language: ruby
+rvm:
+  - rbx-2.1.1
+  - rbx
+  - jruby-19mode
+  - 1.9.3
+  - 2.0.0
