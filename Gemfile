@@ -3,9 +3,11 @@ source 'http://rubygems.org'
 gem 'rake'
 
 group :development do
-  gem 'guard'
-  gem 'guard-rspec'
-  gem 'guard-bundler'
+  platforms :ruby_19, :ruby_20, :ruby_21 do
+    gem 'guard'
+    gem 'guard-rspec'
+    gem 'guard-bundler'
+  end
 end
 
 group :test do
