@@ -1,7 +1,11 @@
 require 'helper'
 
 describe OmniAuth::Strategies::OAuth2 do
-  def app; lambda { |env| [200, {}, ['Hello.']] } end
+  def app
+    lambda do |env|
+      [200, {}, ['Hello.']]
+    end
+  end
   let(:fresh_strategy) { Class.new(OmniAuth::Strategies::OAuth2) }
 
   before do

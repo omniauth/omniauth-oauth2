@@ -1,9 +1,9 @@
 require 'cgi'
-require 'uri'
 require 'oauth2'
 require 'omniauth'
-require 'timeout'
 require 'securerandom'
+require 'timeout'
+require 'uri'
 
 module OmniAuth
   module Strategies
@@ -51,7 +51,7 @@ module OmniAuth
 
       def authorize_params
         options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(options.authorize_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        params = options.authorize_params.merge(authorize_options)
         if OmniAuth.config.test_mode
           @env ||= {}
           @env['rack.session'] ||= {}
@@ -61,26 +61,19 @@ module OmniAuth
       end
 
       def token_params
-        options.token_params.merge(options.token_options.inject({}){|h,k| h[k.to_sym] = options[k] if options[k]; h})
+        options.token_params.merge(token_options)
       end
 
-      def callback_phase
+      def callback_phase # rubocop:disable CyclomaticComplexity
         error = request.params['error_reason'] || request.params['error']
         if error
-
           fail!(error, CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri']))
-
         elsif !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
-
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, 'CSRF detected'))
-
         else
-
           self.access_token = build_access_token
           self.access_token = access_token.refresh! if access_token.expired?
-
           super
-
         end
       rescue ::OAuth2::Error, CallbackError => e
         fail!(:invalid_credentials, e)
@@ -92,10 +85,24 @@ module OmniAuth
         fail!(:failed_to_connect, e)
       end
 
-      protected
+    protected
+
+      def token_options
+        options.token_options.inject({}) do |hash, key|
+          hash[key.to_sym] = options[key] if options[key]
+          hash
+        end
+      end
+
+      def authorize_options
+        options.authorize_options.inject({}) do |hash, key|
+          hash[key.to_sym] = options[key] if options[key]
+          hash
+        end
+      end
 
       def deep_symbolize(hash)
-        hash.inject({}) do |h, (k,v)|
+        hash.inject({}) do |h, (k, v)|
           h[k.to_sym] = v.is_a?(Hash) ? deep_symbolize(v) : v
           h
         end
@@ -111,17 +118,18 @@ module OmniAuth
       class CallbackError < StandardError
         attr_accessor :error, :error_reason, :error_uri
 
-        def initialize(error, error_reason=nil, error_uri=nil)
+        def initialize(error, error_reason = nil, error_uri = nil)
           self.error = error
           self.error_reason = error_reason
           self.error_uri = error_uri
         end
 
         def message
-          [self.error, self.error_reason, self.error_uri].compact.join(' | ')
+          [error, error_reason, error_uri].compact.join(' | ')
         end
       end
     end
   end
 end
+
 OmniAuth.config.add_camelization 'oauth2', 'OAuth2'

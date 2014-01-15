@@ -7,17 +7,17 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency 'bundler', '~> 1.0'
 
-  gem.authors       = ["Michael Bleigh", "Erik Michaels-Ober"]
-  gem.email         = ["michael@intridea.com", "sferik@gmail.com"]
+  gem.authors       = ['Michael Bleigh', 'Erik Michaels-Ober']
+  gem.email         = ['michael@intridea.com', 'sferik@gmail.com']
   gem.description   = %q{An abstract OAuth2 strategy for OmniAuth.}
   gem.summary       = %q{An abstract OAuth2 strategy for OmniAuth.}
-  gem.homepage      = "https://github.com/intridea/omniauth-oauth2"
-  gem.license       = "MIT"
+  gem.homepage      = 'https://github.com/intridea/omniauth-oauth2'
+  gem.license       = 'MIT'
 
-  gem.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
+  gem.executables   = `git ls-files -- bin/*`.split("\n").collect { |f| File.basename(f) }
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  gem.name          = "omniauth-oauth2"
-  gem.require_paths = ["lib"]
+  gem.name          = 'omniauth-oauth2'
+  gem.require_paths = ['lib']
   gem.version       = OmniAuth::OAuth2::VERSION
 end
