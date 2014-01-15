@@ -11,13 +11,15 @@ end
 group :test do
   gem 'rack-test'
   gem 'rspec', '~> 2.14'
+  gem 'rubocop', '>= 0.16', :platforms => [:ruby_19, :ruby_20, :ruby_21]
   gem 'simplecov'
   gem 'webmock'
 end
 
 platforms :rbx do
- gem 'rubysl', '~> 2.0'
- gem 'rubinius-developer_tools'
+  gem 'racc'
+  gem 'rubysl', '~> 2.0'
+  gem 'rubinius-developer_tools'
 end
 
 # Specify your gem's dependencies in omniauth-oauth2.gemspec
