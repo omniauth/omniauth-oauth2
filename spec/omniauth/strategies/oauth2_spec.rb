@@ -1,8 +1,8 @@
-require 'spec_helper'
+require 'helper'
 
 describe OmniAuth::Strategies::OAuth2 do
-  def app; lambda{|env| [200, {}, ["Hello."]]} end
-  let(:fresh_strategy){ Class.new(OmniAuth::Strategies::OAuth2) }
+  def app; lambda { |env| [200, {}, ['Hello.']] } end
+  let(:fresh_strategy) { Class.new(OmniAuth::Strategies::OAuth2) }
 
   before do
     OmniAuth.config.test_mode = true
@@ -13,82 +13,82 @@ describe OmniAuth::Strategies::OAuth2 do
   end
 
   describe '#client' do
-    subject{ fresh_strategy }
+    subject { fresh_strategy }
 
-    it 'should be initialized with symbolized client_options' do
+    it 'is initialized with symbolized client_options' do
       instance = subject.new(app, :client_options => {'authorize_url' => 'https://example.com'})
-      instance.client.options[:authorize_url].should == 'https://example.com'
+      expect(instance.client.options[:authorize_url]).to eq('https://example.com')
     end
 
-    it 'should set ssl options as connection options' do
+    it 'sets ssl options as connection options' do
       instance = subject.new(app, :client_options => {'ssl' => {'ca_path' => 'foo'}})
-      instance.client.options[:connection_opts][:ssl] =~ {:ca_path => 'foo'}
+      expect(instance.client.options[:connection_opts][:ssl]).to eq(:ca_path => 'foo')
     end
   end
 
   describe '#authorize_params' do
     subject { fresh_strategy }
 
-    it 'should include any authorize params passed in the :authorize_params option' do
+    it 'includes any authorize params passed in the :authorize_params option' do
       instance = subject.new('abc', 'def', :authorize_params => {:foo => 'bar', :baz => 'zip'})
-      instance.authorize_params['foo'].should == 'bar'
-      instance.authorize_params['baz'].should == 'zip'
+      expect(instance.authorize_params['foo']).to eq('bar')
+      expect(instance.authorize_params['baz']).to eq('zip')
     end
 
-    it 'should include top-level options that are marked as :authorize_options' do
+    it 'includes top-level options that are marked as :authorize_options' do
       instance = subject.new('abc', 'def', :authorize_options => [:scope, :foo, :state], :scope => 'bar', :foo => 'baz')
-      instance.authorize_params['scope'].should == 'bar'
-      instance.authorize_params['foo'].should == 'baz'
+      expect(instance.authorize_params['scope']).to eq('bar')
+      expect(instance.authorize_params['foo']).to eq('baz')
     end
 
-    it 'should include random state in the authorize params' do
+    it 'includes random state in the authorize params' do
       instance = subject.new('abc', 'def')
-      instance.authorize_params.keys.should == ['state']
-      instance.session['omniauth.state'].should_not be_empty
+      expect(instance.authorize_params.keys).to eq(['state'])
+      expect(instance.session['omniauth.state']).not_to be_empty
     end
   end
 
   describe '#token_params' do
     subject { fresh_strategy }
 
-    it 'should include any authorize params passed in the :authorize_params option' do
+    it 'includes any authorize params passed in the :authorize_params option' do
       instance = subject.new('abc', 'def', :token_params => {:foo => 'bar', :baz => 'zip'})
-      instance.token_params.should == {'foo' => 'bar', 'baz' => 'zip'}
+      expect(instance.token_params).to eq('foo' => 'bar', 'baz' => 'zip')
     end
 
-    it 'should include top-level options that are marked as :authorize_options' do
+    it 'includes top-level options that are marked as :authorize_options' do
       instance = subject.new('abc', 'def', :token_options => [:scope, :foo], :scope => 'bar', :foo => 'baz')
-      instance.token_params.should == {'scope' => 'bar', 'foo' => 'baz'}
+      expect(instance.token_params).to eq('scope' => 'bar', 'foo' => 'baz')
     end
   end
 
   describe '#callback_phase' do
     subject { fresh_strategy }
-    it "should call fail! with the client error received" do
+    it 'calls fail with the client error received' do
       instance = subject.new('abc', 'def')
-      instance.stub(:request) {
-        double('Request', { :params => {'error_reason' => 'user_denied', 'error' => 'access_denied'} } )
-      }
+      instance.stub(:request) do
+        double('Request', :params => {'error_reason' => 'user_denied', 'error' => 'access_denied'})
+      end
 
-      instance.should_receive(:fail!).with("user_denied", anything())
+      expect(instance).to receive(:fail!).with('user_denied', anything)
       instance.callback_phase
     end
   end
 end
 
 describe OmniAuth::Strategies::OAuth2::CallbackError do
-  let(:error){ Class.new(OmniAuth::Strategies::OAuth2::CallbackError) }
+  let(:error) { Class.new(OmniAuth::Strategies::OAuth2::CallbackError) }
   describe '#message' do
     subject { error }
-    it "should include all of the attributes" do
+    it 'includes all of the attributes' do
       instance = subject.new('error', 'description', 'uri')
-      instance.message.should =~ /error/
-      instance.message.should =~ /description/
-      instance.message.should =~ /uri/
+      expect(instance.message).to match(/error/)
+      expect(instance.message).to match(/description/)
+      expect(instance.message).to match(/uri/)
     end
-    it "should include all of the attributes" do
+    it 'includes all of the attributes' do
       instance = subject.new(nil, :symbol)
-      instance.message.should == 'symbol'
+      expect(instance.message).to eq('symbol')
     end
   end
 end
