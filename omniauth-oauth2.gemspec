@@ -1,5 +1,6 @@
-# -*- encoding: utf-8 -*-
-require File.expand_path('../lib/omniauth-oauth2/version', __FILE__)
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'omniauth-oauth2/version'
 
 Gem::Specification.new do |gem|
   gem.add_dependency 'omniauth', '~> 1.0'
@@ -10,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.authors       = ['Michael Bleigh', 'Erik Michaels-Ober']
   gem.email         = ['michael@intridea.com', 'sferik@gmail.com']
   gem.description   = %q{An abstract OAuth2 strategy for OmniAuth.}
-  gem.summary       = %q{An abstract OAuth2 strategy for OmniAuth.}
+  gem.summary       = gem.description
   gem.homepage      = 'https://github.com/intridea/omniauth-oauth2'
   gem.license       = 'MIT'
 
