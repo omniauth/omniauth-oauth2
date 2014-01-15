@@ -3,6 +3,7 @@ require 'omniauth'
 require 'securerandom'
 require 'socket'       # for SocketError
 require 'timeout'      # for Timeout::Error
+require 'faraday'      # for Faraday::Error::TimeoutError and Faraday::Error::ConnectionFailed
 
 module OmniAuth
   module Strategies
