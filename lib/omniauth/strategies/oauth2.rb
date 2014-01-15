@@ -1,7 +1,8 @@
 require 'oauth2'
 require 'omniauth'
 require 'securerandom'
-require 'timeout'
+require 'socket'       # for SocketError
+require 'timeout'      # for Timeout::Error
 
 module OmniAuth
   module Strategies
