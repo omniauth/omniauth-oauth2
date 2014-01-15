@@ -4,6 +4,7 @@ require 'securerandom'
 require 'socket'       # for SocketError
 require 'timeout'      # for Timeout::Error
 require 'faraday'      # for Faraday::Error::TimeoutError and Faraday::Error::ConnectionFailed
+require 'multi_json'   # for MultiJson::DecodeError
 
 module OmniAuth
   module Strategies
