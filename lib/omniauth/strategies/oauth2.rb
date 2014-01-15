@@ -51,7 +51,7 @@ module OmniAuth
 
       def authorize_params
         options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(authorize_options)
+        params = options.authorize_params.merge(options_for('authorize'))
         if OmniAuth.config.test_mode
           @env ||= {}
           @env['rack.session'] ||= {}
@@ -61,7 +61,7 @@ module OmniAuth
       end
 
       def token_params
-        options.token_params.merge(token_options)
+        options.token_params.merge(options_for('token'))
       end
 
       def callback_phase # rubocop:disable CyclomaticComplexity
@@ -87,30 +87,25 @@ module OmniAuth
 
     protected
 
-      def token_options
-        options.token_options.inject({}) do |hash, key|
-          hash[key.to_sym] = options[key] if options[key]
-          hash
-        end
-      end
-
-      def authorize_options
-        options.authorize_options.inject({}) do |hash, key|
-          hash[key.to_sym] = options[key] if options[key]
-          hash
-        end
-      end
-
-      def deep_symbolize(hash)
-        hash.inject({}) do |h, (k, v)|
-          h[k.to_sym] = v.is_a?(Hash) ? deep_symbolize(v) : v
-          h
-        end
-      end
-
       def build_access_token
         verifier = request.params['code']
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+      end
+
+      def deep_symbolize(options)
+        hash = {}
+        options.each do |key, value|
+          hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value
+        end
+        hash
+      end
+
+      def options_for(option)
+        hash = {}
+        options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
+          hash[key.to_sym] = options[key]
+        end
+        hash
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
