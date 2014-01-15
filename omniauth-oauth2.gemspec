@@ -10,8 +10,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'simplecov'
 
-  gem.authors       = ["Michael Bleigh"]
-  gem.email         = ["michael@intridea.com"]
+  gem.authors       = ["Michael Bleigh", "Erik Michaels-Ober"]
+  gem.email         = ["michael@intridea.com", "sferik@gmail.com"]
   gem.description   = %q{An abstract OAuth2 strategy for OmniAuth.}
   gem.summary       = %q{An abstract OAuth2 strategy for OmniAuth.}
   gem.homepage      = "https://github.com/intridea/omniauth-oauth2"
