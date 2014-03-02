@@ -1,10 +1,10 @@
 # OmniAuth OAuth2
 
-[![Gem Version](https://badge.fury.io/rb/omniauth-oauth2.png)][gem]
-[![Build Status](https://secure.travis-ci.org/intridea/omniauth-oauth2.png?branch=master)][travis]
-[![Dependency Status](https://gemnasium.com/intridea/omniauth-oauth2.png?travis)][gemnasium]
-[![Code Climate](https://codeclimate.com/github/intridea/omniauth-oauth2.png)][codeclimate]
-[![Coverage Status](https://coveralls.io/repos/intridea/omniauth-oauth2/badge.png?branch=master)][coveralls]
+[![Gem Version](http://img.shields.io/gem/v/omniauth-oauth2.svg)][gem]
+[![Build Status](http://img.shields.io/travis/intridea/omniauth-oauth2.svg)][travis]
+[![Dependency Status](http://img.shields.io/gemnasium/intridea/omniauth-oauth2.svg)][gemnasium]
+[![Code Climate](http://img.shields.io/codeclimate/github/intridea/omniauth-oauth2.svg)][codeclimate]
+[![Coverage Status](http://img.shields.io/coveralls/intridea/omniauth-oauth2.svg)][coveralls]
 
 [gem]: https://rubygems.org/gems/omniauth-oauth2
 [travis]: http://travis-ci.org/intridea/omniauth-oauth2
