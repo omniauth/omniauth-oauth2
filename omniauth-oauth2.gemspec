@@ -12,15 +12,15 @@ Gem::Specification.new do |gem|
 
   gem.authors       = ['Michael Bleigh', 'Erik Michaels-Ober']
   gem.email         = ['michael@intridea.com', 'sferik@gmail.com']
-  gem.description   = %q{An abstract OAuth2 strategy for OmniAuth.}
+  gem.description   = %q(An abstract OAuth2 strategy for OmniAuth.)
   gem.summary       = gem.description
   gem.homepage      = 'https://github.com/intridea/omniauth-oauth2'
-  gem.license       = 'MIT'
+  gem.licenses      = %w(MIT)
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").collect { |f| File.basename(f) }
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.name          = 'omniauth-oauth2'
-  gem.require_paths = ['lib']
+  gem.require_paths = %w(lib)
   gem.version       = OmniAuth::OAuth2::VERSION
 end

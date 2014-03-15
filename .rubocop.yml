@@ -76,3 +76,7 @@ CaseIndentation:
 
 Lambda:
   Enabled: false
+
+FileName:
+  Exclude:
+    - 'lib/omniauth-oauth2.rb'
