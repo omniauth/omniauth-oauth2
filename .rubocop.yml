@@ -1,5 +1,5 @@
 AllCops:
-  Includes:
+  Include:
     - 'Gemfile'
     - 'Rakefile'
     - 'omniauth-oauth2.gemspec'
