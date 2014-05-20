@@ -70,7 +70,7 @@ describe OmniAuth::Strategies::OAuth2 do
     subject { fresh_strategy }
     it 'calls fail with the client error received' do
       instance = subject.new('abc', 'def')
-      instance.stub(:request) do
+      allow(instance).to receive(:request) do
         double('Request', :params => {'error_reason' => 'user_denied', 'error' => 'access_denied'})
       end
 
