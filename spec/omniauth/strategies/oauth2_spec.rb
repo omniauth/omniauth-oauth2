@@ -2,7 +2,7 @@ require 'helper'
 
 describe OmniAuth::Strategies::OAuth2 do
   def app
-    lambda do |env|
+    lambda do |_env|
       [200, {}, ['Hello.']]
     end
   end
