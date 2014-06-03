@@ -15,7 +15,7 @@ group :test do
   gem 'json', :platforms => [:jruby, :ruby_18, :ruby_19]
   gem 'mime-types', '~> 1.25', :platforms => [:jruby, :ruby_18]
   gem 'rack-test'
-  gem 'rspec', '~> 2.14'
+  gem 'rspec', '~> 3.0.0'
   gem 'rubocop', '>= 0.21', :platforms => [:ruby_19, :ruby_20, :ruby_21]
   gem 'simplecov', :require => false
   gem 'webmock'
