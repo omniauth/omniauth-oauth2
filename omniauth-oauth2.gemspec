@@ -12,7 +12,7 @@ Gem::Specification.new do |gem|
 
   gem.authors       = ['Michael Bleigh', 'Erik Michaels-Ober']
   gem.email         = ['michael@intridea.com', 'sferik@gmail.com']
-  gem.description   = %q(An abstract OAuth2 strategy for OmniAuth.)
+  gem.description   = 'An abstract OAuth2 strategy for OmniAuth.'
   gem.summary       = gem.description
   gem.homepage      = 'https://github.com/intridea/omniauth-oauth2'
   gem.licenses      = %w(MIT)
