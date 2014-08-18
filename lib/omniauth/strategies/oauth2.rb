@@ -65,7 +65,7 @@ module OmniAuth
         options.token_params.merge(options_for('token'))
       end
 
-      def callback_phase # rubocop:disable CyclomaticComplexity
+      def callback_phase # rubocop:disable CyclomaticComplexity, MethodLength, PerceivedComplexity
         error = request.params['error_reason'] || request.params['error']
         if error
           fail!(error, CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri']))

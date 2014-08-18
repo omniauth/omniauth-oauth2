@@ -17,7 +17,7 @@ group :test do
   gem 'rack-test'
   gem 'rest-client', '~> 1.6.0', :platforms => [:jruby, :ruby_18]
   gem 'rspec', '~> 3.0.0'
-  gem 'rubocop', '>= 0.21', :platforms => [:ruby_19, :ruby_20, :ruby_21]
+  gem 'rubocop', '>= 0.25', :platforms => [:ruby_19, :ruby_20, :ruby_21]
   gem 'simplecov', '>= 0.9'
   gem 'webmock'
 end
