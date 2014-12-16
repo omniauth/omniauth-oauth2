@@ -77,6 +77,50 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance).to receive(:fail!).with('user_denied', anything)
       instance.callback_phase
     end
+
+    it 'should accept callback params from the request via params[] hash' do
+
+      # Fake having a session.
+      # Can't use the ActionController:TestCase methods in this context
+      OmniAuth::Strategies::OAuth2.class_eval %Q"
+                                        def session=(var)
+                                          @session = var
+                                        end
+                                        def session
+                                          @session
+                                        end
+                                        "
+
+      instance = subject.new('abc', 'def')
+      instance.session = {'omniauth.state' => 'abc'} #fake session
+      allow(instance).to receive(:request) do
+        double('Request', :params => {'code' => '4/def', 'state' => 'abc'})
+      end
+
+
+      expect(instance).to receive(:build_access_token)
+
+      # It will throw the exception because - as it stands - there is no way to actually successfully get
+      # an access token back from the current build_access_token method without it coming from a proper request
+      expect {
+        instance.callback_phase
+      }.to raise_error(
+               NoMethodError,
+               "undefined method `expired?' for nil:NilClass"
+           )
+
+    end
+    it 'should, given sane params, return an access token' do
+      instance = subject.new('abc', 'def', :provider_ignores_state => true, :code => '4/def')
+
+      allow(instance).to receive(:request) do
+        double('Request', :params => {})
+      end
+
+      expect(
+          instance.callback_phase
+      ).to be_a AccessToken
+    end
   end
 end
 
