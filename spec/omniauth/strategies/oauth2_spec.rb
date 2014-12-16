@@ -67,6 +67,18 @@ describe OmniAuth::Strategies::OAuth2 do
   end
 
   describe '#callback_phase' do
+    before :all do
+      # Fake having a session.
+      # Can't use the ActionController:TestCase methods in this context
+      OmniAuth::Strategies::OAuth2.class_eval %Q"
+                                        def session=(var)
+                                          @session = var
+                                        end
+                                        def session
+                                          @session
+                                        end
+                                        "
+    end
     subject { fresh_strategy }
     it 'calls fail with the client error received' do
       instance = subject.new('abc', 'def')
@@ -80,16 +92,6 @@ describe OmniAuth::Strategies::OAuth2 do
 
     it 'should accept callback params from the request via params[] hash' do
 
-      # Fake having a session.
-      # Can't use the ActionController:TestCase methods in this context
-      OmniAuth::Strategies::OAuth2.class_eval %Q"
-                                        def session=(var)
-                                          @session = var
-                                        end
-                                        def session
-                                          @session
-                                        end
-                                        "
 
       instance = subject.new('abc', 'def')
       instance.session = {'omniauth.state' => 'abc'} #fake session
@@ -110,8 +112,30 @@ describe OmniAuth::Strategies::OAuth2 do
            )
 
     end
-    it 'should, given sane params, return an access token' do
+
+    it 'should accept callback params as constructor options' do
+
       instance = subject.new('abc', 'def', :provider_ignores_state => true, :code => '4/def')
+      allow(instance).to receive(:request) do
+        double('Request', :params => {})
+      end
+
+
+      expect(instance).to receive(:build_access_token)
+
+      # It will throw the exception because - as it stands - there is no way to actually successfully get
+      # an access token back from the current build_access_token method without it coming from a proper request
+      expect {
+        instance.callback_phase
+      }.to raise_error(
+               NoMethodError,
+               "undefined method `expired?' for nil:NilClass"
+           )
+
+    end
+
+    it 'should, given sane params, return an access token' do
+      instance = subject.new('abc', 'def', :provider_ignores_state => true, :code => '4/def', :callback_url => '')
 
       allow(instance).to receive(:request) do
         double('Request', :params => {})
