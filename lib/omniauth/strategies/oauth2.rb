@@ -26,6 +26,7 @@ module OmniAuth
       option :token_params, {}
       option :token_options, []
       option :auth_token_params, {}
+      option :code, nil
       option :provider_ignores_state, false
 
       attr_accessor :access_token
@@ -35,6 +36,7 @@ module OmniAuth
       end
 
       def callback_url
+        @env ||= {} if OmniAuth.config.test_mode
         full_host + script_name + callback_path
       end
 
@@ -89,7 +91,7 @@ module OmniAuth
     protected
 
       def build_access_token
-        verifier = request.params['code']
+        verifier = options.code || request.params['code']
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
