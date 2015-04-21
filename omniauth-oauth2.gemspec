@@ -3,7 +3,6 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'omniauth-oauth2/version'
 
 Gem::Specification.new do |gem|
-  gem.add_dependency 'faraday',   ['>= 0.8', '< 0.10']
   gem.add_dependency 'oauth2',     '~> 1.0'
   gem.add_dependency 'omniauth',   '~> 1.2'
 

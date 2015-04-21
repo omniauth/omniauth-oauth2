@@ -3,7 +3,6 @@ require 'omniauth'
 require 'securerandom'
 require 'socket'       # for SocketError
 require 'timeout'      # for Timeout::Error
-require 'faraday'      # for Faraday::Error::TimeoutError and Faraday::Error::ConnectionFailed
 
 module OmniAuth
   module Strategies
@@ -77,9 +76,9 @@ module OmniAuth
         end
       rescue ::OAuth2::Error, CallbackError => e
         fail!(:invalid_credentials, e)
-      rescue ::Timeout::Error, ::Errno::ETIMEDOUT, Faraday::Error::TimeoutError => e
+      rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
         fail!(:timeout, e)
-      rescue ::SocketError, Faraday::Error::ConnectionFailed => e
+      rescue ::SocketError => e
         fail!(:failed_to_connect, e)
       end
 
