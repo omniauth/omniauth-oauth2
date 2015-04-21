@@ -2,14 +2,6 @@ source 'http://rubygems.org'
 
 gem 'rake'
 
-group :development do
-  platforms :ruby_19, :ruby_20, :ruby_21 do
-    gem 'guard'
-    gem 'guard-rspec'
-    gem 'guard-bundler'
-  end
-end
-
 group :test do
   gem 'coveralls'
   gem 'json', :platforms => [:jruby, :ruby_18, :ruby_19]
