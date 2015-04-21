@@ -8,7 +8,7 @@ if RUBY_VERSION >= '1.9'
   SimpleCov.formatters = [SimpleCov::Formatter::HTMLFormatter, Coveralls::SimpleCov::Formatter]
 
   SimpleCov.start do
-    minimum_coverage(76)
+    minimum_coverage(78.48)
   end
 end
 
