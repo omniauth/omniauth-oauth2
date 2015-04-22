@@ -1,8 +1,8 @@
-require 'oauth2'
-require 'omniauth'
-require 'securerandom'
-require 'socket'       # for SocketError
-require 'timeout'      # for Timeout::Error
+require "oauth2"
+require "omniauth"
+require "securerandom"
+require "socket"       # for SocketError
+require "timeout"      # for Timeout::Error
 
 module OmniAuth
   module Strategies
@@ -37,10 +37,10 @@ module OmniAuth
       end
 
       credentials do
-        hash = {'token' => access_token.token}
-        hash.merge!('refresh_token' => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
-        hash.merge!('expires_at' => access_token.expires_at) if access_token.expires?
-        hash.merge!('expires' => access_token.expires?)
+        hash = {"token" => access_token.token}
+        hash.merge!("refresh_token" => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
+        hash.merge!("expires_at" => access_token.expires_at) if access_token.expires?
+        hash.merge!("expires" => access_token.expires?)
         hash
       end
 
@@ -50,25 +50,25 @@ module OmniAuth
 
       def authorize_params
         options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(options_for('authorize'))
+        params = options.authorize_params.merge(options_for("authorize"))
         if OmniAuth.config.test_mode
           @env ||= {}
-          @env['rack.session'] ||= {}
+          @env["rack.session"] ||= {}
         end
-        session['omniauth.state'] = params[:state]
+        session["omniauth.state"] = params[:state]
         params
       end
 
       def token_params
-        options.token_params.merge(options_for('token'))
+        options.token_params.merge(options_for("token"))
       end
 
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
-        error = request.params['error_reason'] || request.params['error']
+        error = request.params["error_reason"] || request.params["error"]
         if error
-          fail!(error, CallbackError.new(request.params['error'], request.params['error_description'] || request.params['error_reason'], request.params['error_uri']))
-        elsif !options.provider_ignores_state && (request.params['state'].to_s.empty? || request.params['state'] != session.delete('omniauth.state'))
-          fail!(:csrf_detected, CallbackError.new(:csrf_detected, 'CSRF detected'))
+          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+          fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         else
           self.access_token = build_access_token
           self.access_token = access_token.refresh! if access_token.expired?
@@ -85,7 +85,7 @@ module OmniAuth
     protected
 
       def build_access_token
-        verifier = request.params['code']
+        verifier = request.params["code"]
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
@@ -117,11 +117,11 @@ module OmniAuth
         end
 
         def message
-          [error, error_reason, error_uri].compact.join(' | ')
+          [error, error_reason, error_uri].compact.join(" | ")
         end
       end
     end
   end
 end
 
-OmniAuth.config.add_camelization 'oauth2', 'OAuth2'
+OmniAuth.config.add_camelization "oauth2", "OAuth2"

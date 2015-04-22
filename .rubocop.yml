@@ -7,7 +7,7 @@ Metrics/LineLength:
 
 Metrics/MethodLength:
   CountComments: false
-  Max: 15
+  Max: 10
 
 Metrics/ParameterLists:
   Max: 4
@@ -26,29 +26,17 @@ Style/CollectionMethods:
 Style/Documentation:
   Enabled: false
 
-Style/DotPosition:
-  EnforcedStyle: trailing
-
 Style/DoubleNegation:
-  Enabled: false
-
-Style/EachWithObject:
-  Enabled: false
-
-Style/Encoding:
   Enabled: false
 
 Style/HashSyntax:
   EnforcedStyle: hash_rockets
 
-Style/Lambda:
-  Enabled: false
-
-Style/RaiseArgs:
-  EnforcedStyle: compact
-
 Style/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
 
 Style/TrailingComma:
   EnforcedStyleForMultiline: 'comma'
