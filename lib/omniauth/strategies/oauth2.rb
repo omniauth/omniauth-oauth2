@@ -14,6 +14,10 @@ module OmniAuth
     class OAuth2
       include OmniAuth::Strategy
 
+      def self.inherited(subclass)
+        OmniAuth::Strategy.included(subclass)
+      end
+
       args [:client_id, :client_secret]
 
       option :client_id, nil

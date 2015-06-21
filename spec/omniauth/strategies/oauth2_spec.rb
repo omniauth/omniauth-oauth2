@@ -16,6 +16,15 @@ describe OmniAuth::Strategies::OAuth2 do
     OmniAuth.config.test_mode = false
   end
 
+  describe "Subclassing Behavior" do
+    subject { fresh_strategy }
+
+    it "performs the OmniAuth::Strategy included hook" do
+      expect(OmniAuth.strategies).to include(OmniAuth::Strategies::OAuth2)
+      expect(OmniAuth.strategies).to include(subject)
+    end
+  end
+
   describe "#client" do
     subject { fresh_strategy }
 
