@@ -49,14 +49,10 @@ module OmniAuth
       end
 
       def authorize_params
-        options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(options_for("authorize"))
-        if OmniAuth.config.test_mode
-          @env ||= {}
-          @env["rack.session"] ||= {}
-        end
-        session["omniauth.state"] = params[:state]
-        params
+        site = self.class.name
+        state = state_store.fetch(site) { state_store[site] = SecureRandom.hex(24) }
+        options.authorize_params[:state] = state
+        options.authorize_params.merge(options_for("authorize"))
       end
 
       def token_params
@@ -65,11 +61,18 @@ module OmniAuth
 
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
+        site = self.class.name
+        expected_state = state_store[site]
+        actual_state = request.params["state"].to_s
+
         if error
-          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+          description = request.params["error_description"] || request.params["error_reason"]
+          error_uri = request.params["error_uri"]
+          fail!(error, CallbackError.new(request.params["error"], description, error_uri))
+        elsif !options.provider_ignores_state && (actual_state.empty? || actual_state != expected_state)
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         else
+          state_store.delete(site)
           self.access_token = build_access_token
           self.access_token = access_token.refresh! if access_token.expired?
           super
@@ -103,6 +106,22 @@ module OmniAuth
           hash[key.to_sym] = options[key]
         end
         hash
+      end
+
+    private
+
+      def state_store
+        if OmniAuth.config.test_mode
+          @env ||= {}
+          @env["rack.session"] ||= {}
+        end
+
+        state_key = "omniauth.oauth2.state"
+        state_store = session[state_key]
+        unless state_store.is_a?(Hash)
+          state_store = session[state_key] = {}
+        end
+        state_store
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
