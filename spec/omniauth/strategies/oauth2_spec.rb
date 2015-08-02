@@ -39,13 +39,13 @@ describe OmniAuth::Strategies::OAuth2 do
     end
 
     it "allows client_id to be passed as a lambda function" do
-      client_id = lambda { 'abc' }
+      client_id = -> { 'abc' }
       instance = subject.new(Object, client_id, 'def')
       expect(instance.client.id).to eq('abc')
     end
 
     it "allows client_secret to be passed as a lambda function" do
-      client_secret = lambda { 'def' }
+      client_secret = -> { 'def' }
       instance = subject.new(Object, 'abc', client_secret)
       expect(instance.client.secret).to eq('def')
     end
