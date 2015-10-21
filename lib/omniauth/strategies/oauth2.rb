@@ -36,10 +36,6 @@ module OmniAuth
         ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
       end
 
-      def callback_url
-        full_host + script_name + callback_path
-      end
-
       credentials do
         hash = {"token" => access_token.token}
         hash.merge!("refresh_token" => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
