@@ -45,6 +45,8 @@ module OmniAuth
       end
 
       def request_phase
+        neutralize_unsafe_destination!
+
         redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
       end
 
@@ -97,12 +99,34 @@ module OmniAuth
         hash
       end
 
+      def local_uri?(uri)
+        uri.relative? || uri.host.include?(request.host)
+      end
+
+      # if request.params["destination"] does not contain a destination that
+      # includes
+      def neutralize_unsafe_destination!
+        request.params.delete('destination') if unsafe_destination?
+      end
+
       def options_for(option)
         hash = {}
         options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
           hash[key.to_sym] = options[key]
         end
         hash
+      end
+
+      def safe_destination?
+        true if request.params['destination'].nil?
+
+        uri = URI.parse(request.params['destination'])
+
+        local_uri?(uri) ? true : false
+      end
+
+      def unsafe_destination?
+        !safe_destination?
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
