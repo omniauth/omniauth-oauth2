@@ -19,4 +19,5 @@ matrix:
     - rvm: jruby-head
     - rvm: ruby-head
   fast_finish: true
+cache: bundler
 sudo: false
