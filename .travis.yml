@@ -9,6 +9,7 @@ rvm:
   - 2.0.0
   - 2.1
   - 2.2
+  - 2.3.0
   - jruby-18mode
   - jruby-19mode
   - jruby-head
@@ -16,7 +17,8 @@ rvm:
   - ruby-head
 matrix:
   allow_failures:
-    - rvm: jruby-head
-    - rvm: ruby-head
+    - rvm: 1.8.7
+    - rvm: jruby-18mode
   fast_finish: true
+cache: bundler
 sudo: false
