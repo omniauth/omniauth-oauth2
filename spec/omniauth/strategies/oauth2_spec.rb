@@ -10,10 +10,12 @@ describe OmniAuth::Strategies::OAuth2 do
 
   before do
     OmniAuth.config.test_mode = true
+    OmniAuth.config.full_host = "test"
   end
 
   after do
     OmniAuth.config.test_mode = false
+    OmniAuth.config.full_host = "test"
   end
 
   describe "Subclassing Behavior" do
@@ -79,12 +81,44 @@ describe OmniAuth::Strategies::OAuth2 do
     subject { fresh_strategy }
     it "calls fail with the client error received" do
       instance = subject.new("abc", "def")
+      instance.authorize_params # init env and set state
       allow(instance).to receive(:request) do
         double("Request", :params => {"error_reason" => "user_denied", "error" => "access_denied"})
       end
 
       expect(instance).to receive(:fail!).with("user_denied", anything)
       instance.callback_phase
+      expect(instance.env["omniauth.auth"]).to be_nil
+    end
+
+    it "calls fail with csrf_detected when state is incorrect" do
+      instance = subject.new("abc", "def")
+      instance.authorize_params # init env and set state
+      allow(instance).to receive(:request) do
+        double("Request", :params => {"state" => "invalid_state"})
+      end
+
+      expect(instance).to receive(:fail!).with(:csrf_detected, anything)
+      instance.callback_phase
+      expect(instance.env["omniauth.auth"]).to be_nil
+    end
+
+    it "succeeds" do
+      app = double("RackApp")
+      instance = subject.new(app, "def")
+      params = instance.authorize_params
+      allow(instance).to receive(:request) do
+        double("Request", :params => {"state" => params[:state]})
+      end
+      allow(instance).to receive(:build_access_token) do
+        double("OAuht2::AccessToken", :expires? => false, :expired? => false, :token => "access token")
+      end
+
+      expect(app).to receive(:call) do |env|
+        expect(env["omniauth.auth"]["credentials"]).to eq("token" => "access token", "expires" => false)
+      end
+      instance.callback_phase
+      expect(instance.env["omniauth.auth"]).to_not be_nil
     end
   end
 end
