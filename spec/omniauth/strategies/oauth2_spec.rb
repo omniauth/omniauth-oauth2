@@ -58,8 +58,9 @@ describe OmniAuth::Strategies::OAuth2 do
 
     it "includes random state in the authorize params" do
       instance = subject.new("abc", "def")
-      expect(instance.authorize_params.keys).to eq(["state"])
-      expect(instance.session["omniauth.state"]).not_to be_empty
+      params = instance.authorize_params
+      expect(params.keys).to eq(["state"])
+      expect(instance.session["omniauth.state.#{params[:state]}"]).not_to be_empty
     end
   end
 
@@ -119,6 +120,30 @@ describe OmniAuth::Strategies::OAuth2 do
       end
       instance.callback_phase
       expect(instance.env["omniauth.auth"]).to_not be_nil
+    end
+
+    it "allows for two concurrent authorizations on the same session" do
+      app = double("RackApp")
+      instance = subject.new(app, "def")
+      allow(instance).to receive(:build_access_token) do
+        double("OAuht2::AccessToken", :expires? => false, :expired? => false, :token => "access token")
+      end
+
+      states = []
+
+      2.times do
+        params = instance.authorize_params
+        states << params[:state]
+      end
+
+      expect(app).to receive(:call).twice
+      expect(instance).to_not receive(:fail!)
+      states.each do |state|
+        allow(instance).to receive(:request) do
+          double("Request", :params => {"state" => state})
+        end
+        instance.callback_phase
+      end
     end
   end
 end

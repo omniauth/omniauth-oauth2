@@ -59,7 +59,7 @@ module OmniAuth
           @env ||= {}
           @env["rack.session"] ||= {}
         end
-        session["omniauth.state"] = params[:state]
+        session["omniauth.state.#{params[:state]}"] = "true"
         params
       end
 
@@ -71,7 +71,7 @@ module OmniAuth
         error = request.params["error_reason"] || request.params["error"]
         if error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || session.delete("omniauth.state.#{request.params["state"]}") != "true")
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         else
           self.access_token = build_access_token
