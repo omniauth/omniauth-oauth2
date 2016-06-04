@@ -1,4 +1,4 @@
-before_install: gem install bundler
+before_install: gem install bundler --version 1.10.6
 env:
   global:
     - JRUBY_OPTS="$JRUBY_OPTS --debug"
