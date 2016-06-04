@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem "rake"
+gem "rake", "~> 10.5"
 
 group :test do
   gem "coveralls"
@@ -11,8 +11,8 @@ group :test do
   gem "rspec", "~> 3.2"
   gem "rubocop", ">= 0.30", :platforms => [:ruby_19, :ruby_20, :ruby_21, :ruby_22, :ruby_23]
   gem "simplecov", ">= 0.9"
-  gem "addressable", "~> 2.3.0", :platforms => [:ruby_18]
   gem "webmock"
+  gem "addressable", "~> 2.3.8", :platforms => [:jruby, :ruby_18]
 end
 
 # Specify your gem's dependencies in omniauth-oauth2.gemspec
