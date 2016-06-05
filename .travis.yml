@@ -1,4 +1,4 @@
-# before_install: gem install bundler --version 1.10.6
+# before_install: gem install bundler --version 1.12.3
 before_install: gem install bundler
 env:
   global:
