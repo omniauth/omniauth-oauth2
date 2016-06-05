@@ -1,5 +1,4 @@
-before_install: gem install bundler --version 1.12.3
-# before_install: gem install bundler
+before_install: gem install bundler
 env:
   global:
     - JRUBY_OPTS="$JRUBY_OPTS --debug"
@@ -10,7 +9,7 @@ rvm:
   - 2.0.0
   - 2.1
   - 2.2
-  - jruby-18mode
+  - 2.3
   - jruby-19mode
   - jruby-head
   - rbx-2
