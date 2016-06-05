@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem "rake", "~> 10.5"
+gem "rake", "~> 10.4.2"
 
 group :test do
   gem "coveralls"
