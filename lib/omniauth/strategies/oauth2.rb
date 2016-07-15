@@ -29,6 +29,7 @@ module OmniAuth
       option :token_options, []
       option :auth_token_params, {}
       option :provider_ignores_state, false
+      option :state_length, 48
 
       attr_accessor :access_token
 
@@ -49,7 +50,8 @@ module OmniAuth
       end
 
       def authorize_params
-        options.authorize_params[:state] = SecureRandom.hex(24)
+        state_length = options[:state_length]
+        options.authorize_params[:state] = SecureRandom.hex(state_length / 2 + 1)[0...state_length]
         params = options.authorize_params.merge(options_for("authorize"))
         if OmniAuth.config.test_mode
           @env ||= {}
