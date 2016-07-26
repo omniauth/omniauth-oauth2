@@ -24,7 +24,7 @@ module OmniAuth
       option :client_secret, nil
       option :client_options, {}
       option :authorize_params, {}
-      option :authorize_options, [:scope]
+      option :authorize_options, [:scope, :state]
       option :token_params, {}
       option :token_options, []
       option :auth_token_params, {}
@@ -100,7 +100,11 @@ module OmniAuth
       def options_for(option)
         hash = {}
         options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
-          hash[key.to_sym] = options[key]
+          hash[key.to_sym] = if options[key].respond_to?(:call)
+            options[key].call(env)
+          else
+            options[key]
+          end
         end
         hash
       end
