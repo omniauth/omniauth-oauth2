@@ -36,6 +36,24 @@ module OmniAuth
         ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
       end
 
+      def callback_url
+        # If redirect_uri is configured in token_params, use that
+        # value.
+        token_params.to_hash(:symbolize_keys => true)[:redirect_uri] || super
+      end
+
+      def query_string
+        # This method is called by callback_url, only if redirect_uri
+        # is omitted in token_params.
+        if request.params["code"]
+          # If this is a callback, ignore query parameters added by
+          # the provider.
+          ""
+        else
+          super
+        end
+      end
+
       credentials do
         hash = {"token" => access_token.token}
         hash.merge!("refresh_token" => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
