@@ -5,6 +5,8 @@ require "omniauth-oauth2/version"
 Gem::Specification.new do |gem|
   gem.add_dependency "oauth2",     "~> 1.0"
   gem.add_dependency "omniauth",   "~> 1.2"
+  gem.add_dependency "public_suffix", "< 2.0.4" if RUBY_VERSION < "2.0"
+  gem.add_dependency "rack",       "< 2" if RUBY_VERSION < "2.2.2"
 
   gem.add_development_dependency "bundler", "~> 1.0"
 

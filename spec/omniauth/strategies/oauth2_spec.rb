@@ -87,6 +87,56 @@ describe OmniAuth::Strategies::OAuth2 do
       instance.callback_phase
     end
   end
+
+  describe "#callback_url" do
+    subject { fresh_strategy }
+
+    it "returns the value in token_params, if given" do
+      instance = subject.new("abc", "def", :token_params => {:redirect_uri => "http://test/foo?bar=1"})
+      allow(instance).to receive(:request) do
+        double("Request", :params => {"code" => "codecodecode", "state" => "statestatestate"})
+      end
+      expect(instance.callback_url).to eq("http://test/foo?bar=1")
+    end
+
+    it "does not contain any parameters" do
+      instance = subject.new("abc", "def")
+      allow(instance).to receive(:full_host) do
+        "http://test"
+      end
+      allow(instance).to receive(:script_name) do
+        "/foo"
+      end
+      allow(instance).to receive(:callback_path) do
+        "/bar/callback"
+      end
+      allow(instance).to receive(:request) do
+        double("Request",
+               :params => {},
+               :query_string => "")
+      end
+      expect(instance.callback_url).to eq("http://test/foo/bar/callback")
+    end
+
+    it "does not include any query parameters when invoked from within a callback" do
+      instance = subject.new("abc", "def")
+      allow(instance).to receive(:full_host) do
+        "http://test"
+      end
+      allow(instance).to receive(:script_name) do
+        "/foo"
+      end
+      allow(instance).to receive(:callback_path) do
+        "/bar/callback"
+      end
+      allow(instance).to receive(:request) do
+        double("Request",
+               :params => {"code" => "codecodecode", "state" => "statestatestate"},
+               :query_string => "code=codecodecode&state=statestatestate")
+      end
+      expect(instance.callback_url).to eq("http://test/foo/bar/callback")
+    end
+  end
 end
 
 describe OmniAuth::Strategies::OAuth2::CallbackError do
