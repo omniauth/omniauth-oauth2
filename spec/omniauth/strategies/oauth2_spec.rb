@@ -99,7 +99,26 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.callback_url).to eq("http://test/foo?bar=1")
     end
 
-    it "does not include any query parameters like \"code\" and \"state\"" do
+    it "does not contain any parameters" do
+      instance = subject.new("abc", "def")
+      allow(instance).to receive(:full_host) do
+        "http://test"
+      end
+      allow(instance).to receive(:script_name) do
+        "/foo"
+      end
+      allow(instance).to receive(:callback_path) do
+        "/bar/callback"
+      end
+      allow(instance).to receive(:request) do
+        double("Request",
+               :params => {},
+               :query_string => "")
+      end
+      expect(instance.callback_url).to eq("http://test/foo/bar/callback")
+    end
+
+    it "does not include any query parameters when invoked from within a callback" do
       instance = subject.new("abc", "def")
       allow(instance).to receive(:full_host) do
         "http://test"
