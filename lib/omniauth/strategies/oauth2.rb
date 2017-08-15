@@ -3,6 +3,7 @@ require "omniauth"
 require "securerandom"
 require "socket"       # for SocketError
 require "timeout"      # for Timeout::Error
+require "logger"
 
 module OmniAuth
   module Strategies
@@ -45,7 +46,9 @@ module OmniAuth
       end
 
       def request_phase
-        redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
+        url = client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
+        log("[request_phase - url] #{url}")
+        redirect url
       end
 
       def authorize_params
@@ -56,11 +59,14 @@ module OmniAuth
           @env["rack.session"] ||= {}
         end
         session["omniauth.state"] = params[:state]
+        log("[authorize_params] #{params.inspect}")
         params
       end
 
       def token_params
-        options.token_params.merge(options_for("token"))
+        params = options.token_params.merge(options_for("token"))
+        log("[token_params] #{params.inspect}")
+        params
       end
 
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
@@ -83,6 +89,10 @@ module OmniAuth
       end
 
     protected
+
+      def log(message)
+        ::Logger.new($stdout).info(message) if ENV['OAUTH_DEBUG'] == 'true'
+      end
 
       def build_access_token
         verifier = request.params["code"]
