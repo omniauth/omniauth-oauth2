@@ -41,5 +41,12 @@ Style/StderrPuts:
 Style/StringLiterals:
   EnforcedStyle: double_quotes
 
+<<<<<<< HEAD
 Style/TrailingCommaInLiteral:
   EnforcedStyleForMultiline: 'comma'
+=======
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+Style/TrailingCommaInLiteral:
+  EnforcedStyleForMultiline: comma
+>>>>>>> f9a8a5eea4c3445c435bc84a819593f78aad9064
