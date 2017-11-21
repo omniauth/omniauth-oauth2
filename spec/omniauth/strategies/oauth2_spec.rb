@@ -37,6 +37,18 @@ describe OmniAuth::Strategies::OAuth2 do # rubocop:disable Metrics/BlockLength
       instance = subject.new(app, :client_options => {"ssl" => {"ca_path" => "foo"}})
       expect(instance.client.options[:connection_opts][:ssl]).to eq(:ca_path => "foo")
     end
+
+    it "allows client_id to be passed as a lambda function" do
+      client_id = proc { "abc" }
+      instance = subject.new(Object, client_id, "def")
+      expect(instance.client.id).to eq("abc")
+    end
+
+    it "allows client_secret to be passed as a lambda function" do
+      client_secret = proc { "def" }
+      instance = subject.new(Object, "abc", client_secret)
+      expect(instance.client.secret).to eq("def")
+    end
   end
 
   describe "#authorize_params" do

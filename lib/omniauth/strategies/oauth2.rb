@@ -33,7 +33,15 @@ module OmniAuth
       attr_accessor :access_token
 
       def client
-        ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
+        ::OAuth2::Client.new(client_id, client_secret, deep_symbolize(options.client_options))
+      end
+
+      def client_id
+        options.client_id.respond_to?(:call) ? options.client_id.call : options.client_id
+      end
+
+      def client_secret
+        options.client_secret.respond_to?(:call) ? options.client_secret.call : options.client_secret
       end
 
       credentials do
