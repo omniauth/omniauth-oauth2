@@ -35,7 +35,8 @@ Style/DoubleNegation:
 Style/HashSyntax:
   EnforcedStyle: hash_rockets
 
-
+Style/StderrPuts:
+  Enabled: false
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes

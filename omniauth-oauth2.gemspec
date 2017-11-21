@@ -8,11 +8,11 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "bundler", "~> 1.0"
 
-  gem.authors       = ["Michael Bleigh", "Erik Michaels-Ober"]
-  gem.email         = ["michael@intridea.com", "sferik@gmail.com"]
+  gem.authors       = ["Michael Bleigh", "Erik Michaels-Ober", "Tom Milewski"]
+  gem.email         = ["michael@intridea.com", "sferik@gmail.com", "tmilewski@gmail.com"]
   gem.description   = "An abstract OAuth2 strategy for OmniAuth."
   gem.summary       = gem.description
-  gem.homepage      = "https://github.com/intridea/omniauth-oauth2"
+  gem.homepage      = "https://github.com/omniauth/omniauth-oauth2"
   gem.licenses      = %w[MIT]
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").collect { |f| File.basename(f) }
