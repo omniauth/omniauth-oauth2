@@ -18,7 +18,7 @@ module OmniAuth
         OmniAuth::Strategy.included(subclass)
       end
 
-      args [:client_id, :client_secret]
+      args %i[client_id client_secret]
 
       option :client_id, nil
       option :client_secret, nil
@@ -38,9 +38,9 @@ module OmniAuth
 
       credentials do
         hash = {"token" => access_token.token}
-        hash.merge!("refresh_token" => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
-        hash.merge!("expires_at" => access_token.expires_at) if access_token.expires?
-        hash.merge!("expires" => access_token.expires?)
+        hash["refresh_token"] = access_token.refresh_token if access_token.expires? && access_token.refresh_token
+        hash["expires_at"] = access_token.expires_at if access_token.expires?
+        hash["expires"] = access_token.expires?
         hash
       end
 
