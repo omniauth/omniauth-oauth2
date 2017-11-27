@@ -1,8 +1,8 @@
 # OmniAuth OAuth2
 
 [![Gem Version](http://img.shields.io/gem/v/omniauth-oauth2.svg)][gem]
-[![Build Status](http://img.shields.io/travis/intridea/omniauth-oauth2.svg)][travis]
-[![Dependency Status](http://img.shields.io/gemnasium/intridea/omniauth-oauth2.svg)][gemnasium]
+[![Build Status](http://img.shields.io/travis/omniauth/omniauth-oauth2.svg)][travis]
+[![Dependency Status](http://img.shields.io/gemnasium/omniauth/omniauth-oauth2.svg)][gemnasium]
 [![Code Climate](http://img.shields.io/codeclimate/github/intridea/omniauth-oauth2.svg)][codeclimate]
 [![Coverage Status](http://img.shields.io/coveralls/intridea/omniauth-oauth2.svg)][coveralls]
 
