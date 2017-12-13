@@ -7,10 +7,10 @@
 [![Coverage Status](http://img.shields.io/coveralls/intridea/omniauth-oauth2.svg)][coveralls]
 
 [gem]: https://rubygems.org/gems/omniauth-oauth2
-[travis]: http://travis-ci.org/intridea/omniauth-oauth2
-[gemnasium]: https://gemnasium.com/intridea/omniauth-oauth2
-[codeclimate]: https://codeclimate.com/github/intridea/omniauth-oauth2
-[coveralls]: https://coveralls.io/r/intridea/omniauth-oauth2
+[travis]: http://travis-ci.org/omniauth/omniauth-oauth2
+[gemnasium]: https://gemnasium.com/github.com/omniauth/omniauth-oauth2
+[codeclimate]: https://codeclimate.com/github/omniauth/omniauth-oauth2
+[coveralls]: https://coveralls.io/r/omniauth/omniauth-oauth2
 
 This gem contains a generic OAuth2 strategy for OmniAuth. It is meant to serve
 as a building block strategy for other strategies and not to be used
