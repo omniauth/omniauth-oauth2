@@ -5,6 +5,7 @@
 [![Dependency Status](http://img.shields.io/gemnasium/omniauth/omniauth-oauth2.svg)][gemnasium]
 [![Code Climate](http://img.shields.io/codeclimate/github/intridea/omniauth-oauth2.svg)][codeclimate]
 [![Coverage Status](http://img.shields.io/coveralls/intridea/omniauth-oauth2.svg)][coveralls]
+[![Security](https://hakiri.io/github/omniauth/omniauth-oauth2/master.svg)](https://hakiri.io/github/omniauth/omniauth-oauth2/master)
 
 [gem]: https://rubygems.org/gems/omniauth-oauth2
 [travis]: http://travis-ci.org/omniauth/omniauth-oauth2
