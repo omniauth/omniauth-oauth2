@@ -65,4 +65,3 @@ end
 
 That's pretty much it!
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/intridea/omniauth-oauth2/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
