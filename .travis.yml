@@ -1,4 +1,8 @@
-before_install: gem install bundler
+bundler_args: --without development
+before_install:
+  - gem update --system
+  - gem update bundler
+cache: bundler
 env:
   global:
     - JRUBY_OPTS="$JRUBY_OPTS --debug"
@@ -9,6 +13,7 @@ rvm:
   - 2.2.9
   - 2.3.6
   - 2.4.3
+  - 2.5.0
   - jruby-head
   - ruby-head
 matrix:
