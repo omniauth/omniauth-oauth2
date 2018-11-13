@@ -67,7 +67,7 @@ module OmniAuth
         error = request.params["error_reason"] || request.params["error"]
         if error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params["state"], session.delete("omniauth.state")))
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         else
           self.access_token = build_access_token
@@ -103,6 +103,17 @@ module OmniAuth
           hash[key.to_sym] = options[key]
         end
         hash
+      end
+
+      # constant-time comparison algorithm to prevent timing attacks
+      def secure_compare(a, b)
+        return false unless a.bytesize == b.bytesize
+
+        l = a.unpack "C#{a.bytesize}"
+
+        res = 0
+        b.each_byte { |byte| res |= byte ^ l.shift }
+        res == 0
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
