@@ -87,6 +87,16 @@ describe OmniAuth::Strategies::OAuth2 do # rubocop:disable Metrics/BlockLength
       instance.callback_phase
     end
   end
+
+  describe "#secure_params" do
+    subject { fresh_strategy }
+
+    it "returns true when the two inputs are the same and false otherwise" do
+      instance = subject.new("abc", "def")
+      expect(instance.send(:secure_compare, "a", "a")).to be true
+      expect(instance.send(:secure_compare, "b", "a")).to be false
+    end
+  end
 end
 
 describe OmniAuth::Strategies::OAuth2::CallbackError do
