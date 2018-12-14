@@ -32,6 +32,9 @@ Style/Documentation:
 Style/DoubleNegation:
   Enabled: false
 
+Style/ExpandPathArguments:
+  Enabled: false
+
 Style/HashSyntax:
   EnforcedStyle: hash_rockets
 
@@ -44,5 +47,9 @@ Style/StringLiterals:
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
 
-Style/TrailingCommaInLiteral:
+Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+  
