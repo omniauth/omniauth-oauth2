@@ -54,11 +54,49 @@ describe OmniAuth::Strategies::OAuth2 do # rubocop:disable Metrics/BlockLength
       expect(instance.authorize_params["foo"]).to eq("baz")
       expect(instance.authorize_params["state"]).not_to be_empty
     end
+  end
 
-    it "includes random state in the authorize params" do
-      instance = subject.new("abc", "def")
-      expect(instance.authorize_params.keys).to eq(["state"])
-      expect(instance.session["omniauth.state"]).not_to be_empty
+  describe "state handling" do
+    SocialNetwork = Class.new(OmniAuth::Strategies::OAuth2)
+
+    let(:client_options) { {:site => "https://graph.example.com"} }
+    let(:instance) { SocialNetwork.new(-> env {}) }
+
+    before do
+      allow(SecureRandom).to receive(:hex).with(24).and_return("hex-1", "hex-2")
+    end
+
+    it "includes a state scoped to the client" do
+      expect(instance.authorize_params["state"]).to eq("hex-1")
+      expect(instance.session["omniauth.oauth2.state"]).to eq("SocialNetwork" => "hex-1")
+    end
+
+    context "once a state value has been generated" do
+      before do
+        instance.authorize_params
+      end
+
+      it "does not replace an existing session value" do
+        expect(instance.authorize_params["state"]).to eq("hex-1")
+        expect(instance.session["omniauth.oauth2.state"]).to eq("SocialNetwork" => "hex-1")
+      end
+    end
+
+    context "on a successful callback" do
+      let(:request) { double("Request", :params => {"code" => "auth-code", "state" => "hex-1"}) }
+      let(:access_token) { double("AccessToken", :expired? => false, :expires? => false, :token => "access-token") }
+
+      before do
+        allow(instance).to receive(:request).and_return(request)
+        allow(instance).to receive(:build_access_token).and_return(access_token)
+
+        instance.authorize_params
+        instance.callback_phase
+      end
+
+      it "removes the value from the session" do
+        expect(instance.session["omniauth.oauth2.state"]).to eq({})
+      end
     end
 
     it "includes custom state in the authorize params" do
