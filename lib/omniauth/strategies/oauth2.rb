@@ -29,6 +29,7 @@ module OmniAuth
       option :token_options, []
       option :auth_token_params, {}
       option :provider_ignores_state, false
+      option :pkce, false
 
       attr_accessor :access_token
 
@@ -49,18 +50,33 @@ module OmniAuth
       end
 
       def authorize_params
+        verifier = SecureRandom.hex(64)
+
+        if options.pkce
+          # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
+          challenge = Base64
+                 .urlsafe_encode64(Digest::SHA2.digest(verifier))
+                 .split("=")
+                 .first
+          options.authorize_params[:code_challenge] = challenge
+          options.authorize_params[:code_challenge_method] = "S256"
+        end
+
         options.authorize_params[:state] = SecureRandom.hex(24)
         params = options.authorize_params.merge(options_for("authorize"))
+
         if OmniAuth.config.test_mode
           @env ||= {}
           @env["rack.session"] ||= {}
         end
+
+        session["omniauth.pkce.verifier"] = verifier if options.pkce
         session["omniauth.state"] = params[:state]
         params
       end
 
       def token_params
-        options.token_params.merge(options_for("token"))
+        options.token_params.merge(options_for("token")).merge(pkce_token_params)
       end
 
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
@@ -84,17 +100,21 @@ module OmniAuth
 
     protected
 
+      def pkce_token_params
+        return {} unless options.pkce
+
+        { code_verifier: session.delete("omniauth.pkce.verifier") }
+      end
+
       def build_access_token
         verifier = request.params["code"]
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
       def deep_symbolize(options)
-        hash = {}
-        options.each do |key, value|
+        options.each_with_object({}) do |(key, value), hash|
           hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value
         end
-        hash
       end
 
       def options_for(option)
