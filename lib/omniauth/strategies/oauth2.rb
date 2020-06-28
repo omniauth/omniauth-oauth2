@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "oauth2"
 require "omniauth"
 require "securerandom"
@@ -24,7 +26,7 @@ module OmniAuth
       option :client_secret, nil
       option :client_options, {}
       option :authorize_params, {}
-      option :authorize_options, [:scope, :state]
+      option :authorize_options, %i[scope state]
       option :token_params, {}
       option :token_options, []
       option :auth_token_params, {}
@@ -52,15 +54,7 @@ module OmniAuth
       def authorize_params
         verifier = SecureRandom.hex(64)
 
-        if options.pkce
-          # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
-          challenge = Base64
-                 .urlsafe_encode64(Digest::SHA2.digest(verifier))
-                 .split("=")
-                 .first
-          options.authorize_params[:code_challenge] = challenge
-          options.authorize_params[:code_challenge_method] = "S256"
-        end
+        pkce_authorize_params!(verifier)
 
         options.authorize_params[:state] = SecureRandom.hex(24)
         params = options.authorize_params.merge(options_for("authorize"))
@@ -70,8 +64,7 @@ module OmniAuth
           @env["rack.session"] ||= {}
         end
 
-        session["omniauth.pkce.verifier"] = verifier if options.pkce
-        session["omniauth.state"] = params[:state]
+        build_authorize_session!(params, verifier)
         params
       end
 
@@ -79,7 +72,7 @@ module OmniAuth
         options.token_params.merge(options_for("token")).merge(pkce_token_params)
       end
 
-      def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
+      def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
         if error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
@@ -100,10 +93,27 @@ module OmniAuth
 
     protected
 
+      def build_authorize_session!(params, verifier)
+        session["omniauth.pkce.verifier"] = verifier if options.pkce
+        session["omniauth.state"] = params[:state]
+      end
+
+      def pkce_authorize_params!(verifier)
+        return unless options.pkce
+
+        # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
+        challenge = Base64
+                    .urlsafe_encode64(Digest::SHA2.digest(verifier))
+                    .split("=")
+                    .first
+        options.authorize_params[:code_challenge] = challenge
+        options.authorize_params[:code_challenge_method] = "S256"
+      end
+
       def pkce_token_params
         return {} unless options.pkce
 
-        { code_verifier: session.delete("omniauth.pkce.verifier") }
+        {:code_verifier => session.delete("omniauth.pkce.verifier")}
       end
 
       def build_access_token
@@ -121,10 +131,10 @@ module OmniAuth
         hash = {}
         options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
           hash[key.to_sym] = if options[key].respond_to?(:call)
-            options[key].call(env)
-          else
-            options[key]
-          end
+                               options[key].call(env)
+                             else
+                               options[key]
+                             end
         end
         hash
       end
