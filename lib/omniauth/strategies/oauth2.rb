@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "oauth2"
 require "omniauth"
 require "securerandom"

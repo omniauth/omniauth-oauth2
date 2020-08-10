@@ -1,6 +1,9 @@
 AllCops:
   NewCops: enable
 
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
 Layout/AccessModifierIndentation:
   EnforcedStyle: outdent
 
@@ -11,8 +14,11 @@ Layout/LineLength:
 Layout/SpaceInsideHashLiteralBraces:
   EnforcedStyle: no_space
 
+Lint/MissingSuper:
+  Enabled: false
+
 Metrics/AbcSize:
-  Max: 17
+  Max: 18
 
 Metrics/BlockLength:
   Exclude:
@@ -50,6 +56,9 @@ Style/DoubleNegation:
   Enabled: false
 
 Style/ExpandPathArguments:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
   Enabled: false
 
 Style/HashSyntax:
