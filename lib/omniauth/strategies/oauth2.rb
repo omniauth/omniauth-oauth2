@@ -35,10 +35,10 @@ module OmniAuth
         :code_challenge => proc { |verifier|
           Base64.urlsafe_encode64(
             Digest::SHA2.digest(verifier),
-            padding: false
+            :padding => false,
           )
         },
-        :code_challenge_method => "S256"
+        :code_challenge_method => "S256",
       }
 
       attr_accessor :access_token
@@ -59,7 +59,7 @@ module OmniAuth
         redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
       end
 
-      def authorize_params
+      def authorize_params# rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         options.authorize_params[:state] = SecureRandom.hex(24)
 
         if OmniAuth.config.test_mode
@@ -104,13 +104,14 @@ module OmniAuth
 
       def pkce_authorize_params
         return {} unless options.pkce
+
         options.pkce_verifier = SecureRandom.hex(64)
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
         {
           :code_challenge => options.pkce_options[:code_challenge]
                                     .call(options.pkce_verifier),
-          :code_challenge_method => options.pkce_options[:code_challenge_method]
+          :code_challenge_method => options.pkce_options[:code_challenge_method],
         }
       end
 
