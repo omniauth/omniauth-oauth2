@@ -59,7 +59,7 @@ module OmniAuth
         redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
       end
 
-      def authorize_params# rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      def authorize_params # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         options.authorize_params[:state] = SecureRandom.hex(24)
 
         if OmniAuth.config.test_mode
