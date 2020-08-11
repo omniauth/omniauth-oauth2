@@ -30,6 +30,16 @@ module OmniAuth
       option :auth_token_params, {}
       option :provider_ignores_state, false
       option :pkce, false
+      option :pkce_verifier, nil
+      option :pkce_options, {
+        :code_challenge => proc { |verifier|
+          Base64.urlsafe_encode64(
+            Digest::SHA2.digest(verifier),
+            padding: false
+          )
+        },
+        :code_challenge_method => "S256"
+      }
 
       attr_accessor :access_token
 
@@ -50,19 +60,20 @@ module OmniAuth
       end
 
       def authorize_params
-        verifier = SecureRandom.hex(64)
-
-        pkce_authorize_params!(verifier)
-
         options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(options_for("authorize"))
 
         if OmniAuth.config.test_mode
           @env ||= {}
           @env["rack.session"] ||= {}
         end
 
-        build_authorize_session!(params, verifier)
+        params = options.authorize_params
+                        .merge(options_for("authorize"))
+                        .merge(pkce_authorize_params)
+
+        session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
+        session["omniauth.state"] = params[:state]
+
         params
       end
 
@@ -91,21 +102,16 @@ module OmniAuth
 
     protected
 
-      def build_authorize_session!(params, verifier)
-        session["omniauth.pkce.verifier"] = verifier if options.pkce
-        session["omniauth.state"] = params[:state]
-      end
-
-      def pkce_authorize_params!(verifier)
-        return unless options.pkce
+      def pkce_authorize_params
+        return {} unless options.pkce
+        options.pkce_verifier = SecureRandom.hex(64)
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
-        challenge = Base64
-                    .urlsafe_encode64(Digest::SHA2.digest(verifier))
-                    .split("=")
-                    .first
-        options.authorize_params[:code_challenge] = challenge
-        options.authorize_params[:code_challenge_method] = "S256"
+        {
+          :code_challenge => options.pkce_options[:code_challenge]
+                                    .call(options.pkce_verifier),
+          :code_challenge_method => options.pkce_options[:code_challenge_method]
+        }
       end
 
       def pkce_token_params
