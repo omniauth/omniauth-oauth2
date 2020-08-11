@@ -24,11 +24,22 @@ module OmniAuth
       option :client_secret, nil
       option :client_options, {}
       option :authorize_params, {}
-      option :authorize_options, [:scope, :state]
+      option :authorize_options, %i[scope state]
       option :token_params, {}
       option :token_options, []
       option :auth_token_params, {}
       option :provider_ignores_state, false
+      option :pkce, false
+      option :pkce_verifier, nil
+      option :pkce_options, {
+        :code_challenge => proc { |verifier|
+          Base64.urlsafe_encode64(
+            Digest::SHA2.digest(verifier),
+            :padding => false,
+          )
+        },
+        :code_challenge_method => "S256",
+      }
 
       attr_accessor :access_token
 
@@ -48,22 +59,29 @@ module OmniAuth
         redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
       end
 
-      def authorize_params
+      def authorize_params# rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(options_for("authorize"))
+
         if OmniAuth.config.test_mode
           @env ||= {}
           @env["rack.session"] ||= {}
         end
+
+        params = options.authorize_params
+                        .merge(options_for("authorize"))
+                        .merge(pkce_authorize_params)
+
+        session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
         session["omniauth.state"] = params[:state]
+
         params
       end
 
       def token_params
-        options.token_params.merge(options_for("token"))
+        options.token_params.merge(options_for("token")).merge(pkce_token_params)
       end
 
-      def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
+      def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
         if error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
@@ -84,27 +102,44 @@ module OmniAuth
 
     protected
 
+      def pkce_authorize_params
+        return {} unless options.pkce
+
+        options.pkce_verifier = SecureRandom.hex(64)
+
+        # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
+        {
+          :code_challenge => options.pkce_options[:code_challenge]
+                                    .call(options.pkce_verifier),
+          :code_challenge_method => options.pkce_options[:code_challenge_method],
+        }
+      end
+
+      def pkce_token_params
+        return {} unless options.pkce
+
+        {:code_verifier => session.delete("omniauth.pkce.verifier")}
+      end
+
       def build_access_token
         verifier = request.params["code"]
         client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
       def deep_symbolize(options)
-        hash = {}
-        options.each do |key, value|
+        options.each_with_object({}) do |(key, value), hash|
           hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value
         end
-        hash
       end
 
       def options_for(option)
         hash = {}
         options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
           hash[key.to_sym] = if options[key].respond_to?(:call)
-            options[key].call(env)
-          else
-            options[key]
-          end
+                               options[key].call(env)
+                             else
+                               options[key]
+                             end
         end
         hash
       end

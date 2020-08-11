@@ -1,6 +1,6 @@
 require "helper"
 
-describe OmniAuth::Strategies::OAuth2 do # rubocop:disable Metrics/BlockLength
+describe OmniAuth::Strategies::OAuth2 do
   def app
     lambda do |_env|
       [200, {}, ["Hello."]]
@@ -62,9 +62,16 @@ describe OmniAuth::Strategies::OAuth2 do # rubocop:disable Metrics/BlockLength
     end
 
     it "includes custom state in the authorize params" do
-      instance = subject.new("abc", "def", state: Proc.new { "qux" } )
+      instance = subject.new("abc", "def", :state => proc { "qux" })
       expect(instance.authorize_params.keys).to eq(["state"])
       expect(instance.session["omniauth.state"]).to eq("qux")
+    end
+
+    it "includes PKCE parameters if enabled" do
+      instance = subject.new("abc", "def", :pkce => true)
+      expect(instance.authorize_params[:code_challenge]).to be_a(String)
+      expect(instance.authorize_params[:code_challenge_method]).to eq("S256")
+      expect(instance.session["omniauth.pkce.verifier"]).to be_a(String)
     end
   end
 
@@ -79,6 +86,13 @@ describe OmniAuth::Strategies::OAuth2 do # rubocop:disable Metrics/BlockLength
     it "includes top-level options that are marked as :authorize_options" do
       instance = subject.new("abc", "def", :token_options => %i[scope foo], :scope => "bar", :foo => "baz")
       expect(instance.token_params).to eq("scope" => "bar", "foo" => "baz")
+    end
+
+    it "includes the PKCE code_verifier if enabled" do
+      instance = subject.new("abc", "def", :pkce => true)
+      # setup session
+      instance.authorize_params
+      expect(instance.token_params[:code_verifier]).to be_a(String)
     end
   end
 
