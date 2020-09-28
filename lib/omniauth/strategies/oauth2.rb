@@ -70,8 +70,9 @@ module OmniAuth
           error_uri = request.params["error_uri"]
           fail!(error, CallbackError.new(request.params["error"], description, error_uri))
         elsif !options.provider_ignores_state && (actual_state.empty? || actual_state != expected_state)
-          fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+          fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected", state_store: state_store, expected: expected_state, actual: actual_state))
         else
+          log :info, "State verified and cleared - #{actual_state}"
           state_store.delete(site)
           self.access_token = build_access_token
           self.access_token = access_token.refresh! if access_token.expired?
