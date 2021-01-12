@@ -1,13 +1,11 @@
 # OmniAuth OAuth2
 
 [![Gem Version](http://img.shields.io/gem/v/omniauth-oauth2.svg)][gem]
-[![Build Status](http://img.shields.io/travis/omniauth/omniauth-oauth2.svg)][travis]
 [![Code Climate](http://img.shields.io/codeclimate/maintainability/intridea/omniauth-oauth2.svg)][codeclimate]
 [![Coverage Status](http://img.shields.io/coveralls/intridea/omniauth-oauth2.svg)][coveralls]
 [![Security](https://hakiri.io/github/omniauth/omniauth-oauth2/master.svg)](https://hakiri.io/github/omniauth/omniauth-oauth2/master)
 
 [gem]: https://rubygems.org/gems/omniauth-oauth2
-[travis]: http://travis-ci.org/omniauth/omniauth-oauth2
 [codeclimate]: https://codeclimate.com/github/intridea/omniauth-oauth2
 [coveralls]: https://coveralls.io/r/intridea/omniauth-oauth2
 
@@ -32,7 +30,7 @@ module OmniAuth
       # This is where you pass the options you would pass when
       # initializing your consumer from the OAuth gem.
       option :client_options, {:site => "https://api.somesite.com"}
-      
+
       # You may specify that your strategy should use PKCE by setting
       # the pkce option to true: https://tools.ietf.org/html/rfc7636
       option :pkce, true
