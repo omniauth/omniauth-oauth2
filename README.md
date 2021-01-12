@@ -64,3 +64,12 @@ end
 ```
 
 That's pretty much it!
+
+## OmniAuth-OAuth2 for Enterprise
+
+Available as part of the Tidelift Subscription.
+
+The maintainers of OmniAuth-OAuth2 and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source packages you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact packages you use. [Learn more.](https://tidelift.com/subscription/pkg/rubygems-omniauth-oauth2?utm_source=undefined&utm_medium=referral&utm_campaign=enterprise)
+
+## Supported Ruby Versions
+OmniAuth is tested under 2.5, 2.6, 2.7, truffleruby, and JRuby.
