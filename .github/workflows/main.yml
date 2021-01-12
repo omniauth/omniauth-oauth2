@@ -47,3 +47,21 @@ jobs:
       env:
         JRUBY_OPTS: --debug
       run: bundle exec rake
+  coveralls:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.6
+        bundler-cache: true
+    - name: Install dependencies
+      run: bundle install
+    - name: Run tests
+      run: bundle exec rake
+    - name: Coveralls GitHub Action
+      uses: coverallsapp/github-action@v1.1.2
+      with:
+        github-token: ${{ secrets.github_token }}
+        path-to-lcov: './coverage/lcov/omniauth-oauth2.lcov'

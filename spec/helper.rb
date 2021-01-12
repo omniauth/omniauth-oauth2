@@ -3,9 +3,16 @@ $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 
 if RUBY_VERSION >= "1.9"
   require "simplecov"
+  require "simplecov-lcov"
   require "coveralls"
 
-  SimpleCov.formatters = [SimpleCov::Formatter::HTMLFormatter, Coveralls::SimpleCov::Formatter]
+  SimpleCov::Formatter::LcovFormatter.config.report_with_single_file = true
+
+  SimpleCov.formatters = [
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::LcovFormatter,
+    Coveralls::SimpleCov::Formatter
+  ]
 
   SimpleCov.start do
     minimum_coverage(78.48)
