@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "rake", "~> 12.0"
+gem "rake", "~> 13.0"
 
 group :test do
   gem "addressable", "~> 2.3.8", :platforms => %i[jruby ruby_18]
