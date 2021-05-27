@@ -40,6 +40,7 @@ module OmniAuth
         },
         :code_challenge_method => "S256",
       }
+      option :redis, nil
 
       attr_accessor :access_token
 
@@ -71,8 +72,22 @@ module OmniAuth
                         .merge(options_for("authorize"))
                         .merge(pkce_authorize_params)
 
-        session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
-        session["omniauth.state"] = params[:state]
+        if options.redis
+          data =
+            {}.tap do |hash|
+              hash["state"] = params[:state]
+              hash["pkce_verifier"] = options.pkce_verifier if options.pkce
+            end
+
+          options.redis[:store].setex(
+            "omniauth:#{options.name}:#{session.id}",
+            options.redis[:expiry],
+            data.to_json
+          )
+        else
+          session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
+          session["omniauth.state"] = params[:state]
+        end
 
         params
       end
@@ -83,9 +98,19 @@ module OmniAuth
 
       def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
+
+        state =
+          if options.redis
+            store = options.redis[:store]
+            key = "omniauth:#{options.name}:#{session.id}"
+            JSON.parse(store.get(key))&.fetch("state", nil)
+          else
+            session.delete("omniauth.state")
+          end
+
         if error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != state)
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         else
           self.access_token = build_access_token
@@ -118,7 +143,16 @@ module OmniAuth
       def pkce_token_params
         return {} unless options.pkce
 
-        {:code_verifier => session.delete("omniauth.pkce.verifier")}
+        pkce_verifier =
+          if options.redis
+            store = options.redis[:store]
+            key = "omniauth:#{options.name}:#{session.id}"
+            store.get(key)&.fetch("pkce_verifier", nil)
+          else
+            session.delete("omniauth.pkce.verifier")
+          end
+
+        {:code_verifier => pkce_verifier}
       end
 
       def build_access_token
