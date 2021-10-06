@@ -61,6 +61,12 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.session["omniauth.state"]).not_to be_empty
     end
 
+    it "sets callback_url in session" do
+      instance = subject.new("abc", "def")
+      instance.authorize_params
+      expect(instance.session["omniauth.callback_url"]).not_to be_empty
+    end
+
     it "includes custom state in the authorize params" do
       instance = subject.new("abc", "def", :state => proc { "qux" })
       expect(instance.authorize_params.keys).to eq(["state"])
@@ -93,6 +99,28 @@ describe OmniAuth::Strategies::OAuth2 do
       # setup session
       instance.authorize_params
       expect(instance.token_params[:code_verifier]).to be_a(String)
+    end
+  end
+
+  describe "#build_access_token" do
+    subject { fresh_strategy }
+    let(:request_double) { double("Request", params: {}) }
+    let(:client_double) { double }
+    let(:strategy_double) { double }
+    let(:callback_url) { "http://abc.def/auth/abc/callback" }
+
+    it "uses callback_url stored in session" do
+      instance = subject.new("abc", "def")
+
+      allow(instance).to receive(:request).and_return(request_double)
+      allow(instance).to receive(:session).and_return({ "omniauth.callback_url" => callback_url })
+      allow(instance).to receive(:client).and_return(client_double)
+      allow(client_double).to receive(:auth_code).and_return(strategy_double)
+
+      expect(strategy_double).to receive(:get_token)
+        .with(nil, hash_including(redirect_uri: callback_url), {})
+
+      instance.send(:build_access_token)
     end
   end
 
