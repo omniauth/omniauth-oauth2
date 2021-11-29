@@ -92,8 +92,10 @@ module OmniAuth
           self.access_token = access_token.refresh! if access_token.expired?
           super
         end
-      rescue ::OAuth2::Error, CallbackError => e
-        fail!(:invalid_credentials, e)
+      rescue ::OAuth2::Error => e
+        fail!(e.code, e)
+      rescue ::CallbackError => e
+        fail!(e.error, e)
       rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
         fail!(:timeout, e)
       rescue ::SocketError => e
