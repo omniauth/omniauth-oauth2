@@ -75,8 +75,8 @@ module OmniAuth
         if options.redis
           data =
             {}.tap do |hash|
-              hash["state"] = params[:state]
-              hash["pkce_verifier"] = options.pkce_verifier if options.pkce
+              hash["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
+              hash["omniauth.state"] = params[:state]
             end
 
           options.redis[:store].setex(
@@ -99,14 +99,7 @@ module OmniAuth
       def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
 
-        state =
-          if options.redis
-            store = options.redis[:store]
-            key = "omniauth:#{options.name}:#{session.id}"
-            JSON.parse(store.get(key))&.fetch("state", nil)
-          else
-            session.delete("omniauth.state")
-          end
+        state = session_delete("omniauth.state")
 
         if error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
@@ -127,6 +120,19 @@ module OmniAuth
 
     protected
 
+      def session_delete(key)
+        if options.redis
+          store = options.redis[:store]
+          key = "omniauth:#{options.name}:#{session.id}"
+
+          if data = store.get(key)
+            JSON.parse(data)&.fetch(key, nil)
+          end
+        else
+          session.delete(key)
+        end
+      end
+
       def pkce_authorize_params
         return {} unless options.pkce
 
@@ -143,14 +149,7 @@ module OmniAuth
       def pkce_token_params
         return {} unless options.pkce
 
-        pkce_verifier =
-          if options.redis
-            store = options.redis[:store]
-            key = "omniauth:#{options.name}:#{session.id}"
-            store.get(key)&.fetch("pkce_verifier", nil)
-          else
-            session.delete("omniauth.pkce.verifier")
-          end
+        pkce_verifier = session_delete("omniauth.pkce.verifier")
 
         {:code_verifier => pkce_verifier}
       end
