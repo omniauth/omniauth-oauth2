@@ -123,9 +123,9 @@ module OmniAuth
       def session_delete(key)
         if options.redis
           store = options.redis[:store]
-          key = "omniauth:#{options.name}:#{session.id}"
+          store_key = "omniauth:#{options.name}:#{session.id}"
 
-          if data = store.get(key)
+          if data = store.get(store_key)
             JSON.parse(data)&.fetch(key, nil)
           end
         else
