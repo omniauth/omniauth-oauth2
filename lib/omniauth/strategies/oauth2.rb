@@ -77,6 +77,8 @@ module OmniAuth
             {}.tap do |hash|
               hash["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
               hash["omniauth.state"] = params[:state]
+              hash["omniauth.params"] = session["omniauth.params"]
+              hash["omniauth.origin"] = session["omniauth.origin"]
             end
 
           options.redis[:store].setex(
@@ -97,6 +99,11 @@ module OmniAuth
       end
 
       def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+        if options.redis
+          @env['omniauth.params'] = session_delete("omniauth.params")
+          @env['omniauth.origin'] = session_delete("omniauth.origin")
+        end
+
         error = request.params["error_reason"] || request.params["error"]
 
         state = session_delete("omniauth.state")
