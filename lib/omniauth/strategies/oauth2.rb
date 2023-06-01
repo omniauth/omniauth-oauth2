@@ -40,6 +40,7 @@ module OmniAuth
         },
         :code_challenge_method => "S256",
       }
+      option :state_container, StateContainer.new
 
       attr_accessor :access_token
 
@@ -60,7 +61,7 @@ module OmniAuth
       end
 
       def authorize_params # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-        options.authorize_params[:state] = SecureRandom.hex(24)
+        options.authorize_params[:state] = new_state
 
         if OmniAuth.config.test_mode
           @env ||= {}
@@ -72,7 +73,7 @@ module OmniAuth
                         .merge(pkce_authorize_params)
 
         session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
-        session["omniauth.state"] = params[:state]
+        options.state_container.store(self, params[:state])
 
         params
       end
@@ -83,7 +84,7 @@ module OmniAuth
 
       def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
-        if !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+        if !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != options.state_container.take(self))
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         elsif error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
@@ -98,6 +99,10 @@ module OmniAuth
         fail!(:timeout, e)
       rescue ::SocketError => e
         fail!(:failed_to_connect, e)
+      end
+
+      def new_state
+        SecureRandom.hex(24)
       end
 
     protected
