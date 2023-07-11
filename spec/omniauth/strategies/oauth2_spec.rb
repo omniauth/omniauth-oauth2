@@ -140,6 +140,33 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance).to receive(:fail!).with(:csrf_detected, anything)
       instance.callback_phase
     end
+
+    describe 'exception handlings' do
+      let(:params) do
+        {"code" => "code", "state" => state}
+      end
+
+      before do
+        allow_any_instance_of(OmniAuth::Strategies::OAuth2).to receive(:build_access_token).and_raise(exception)
+      end
+
+      {
+        invalid_credentials: [OAuth2::Error, OmniAuth::Strategies::OAuth2::CallbackError],
+        timeout: [Timeout::Error, Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError],
+        failed_to_connect: [SocketError]
+      }.each do |error_type, exceptions|
+        exceptions.each do |klass|
+          context "when #{klass}" do
+            let(:exception) { klass.new 'error' }
+
+            it do
+              expect(instance).to receive(:fail!).with(error_type, exception)
+              instance.callback_phase
+            end
+          end
+        end
+      end
+    end
   end
 end
 
