@@ -151,9 +151,9 @@ describe OmniAuth::Strategies::OAuth2 do
       end
 
       {
-        invalid_credentials: [OAuth2::Error, OmniAuth::Strategies::OAuth2::CallbackError],
-        timeout: [Timeout::Error, Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError],
-        failed_to_connect: [SocketError]
+        :invalid_credentials => [OAuth2::Error, OmniAuth::Strategies::OAuth2::CallbackError],
+        :timeout => [Timeout::Error, Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError],
+        :failed_to_connect => [SocketError]
       }.each do |error_type, exceptions|
         exceptions.each do |klass|
           context "when #{klass}" do
