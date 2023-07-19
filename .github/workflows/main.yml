@@ -31,7 +31,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '3.0' }}
       with:
         name: coverage
-        path: './coverage/lcov/omniauth-oauth2.lcov'
+        path: coverage/lcov/
         retention-days: 1
 
   coveralls:
@@ -42,8 +42,8 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: coverage
-        path: './coverage/lcov/'
+        path: coverage/lcov/
     - name: Coveralls GitHub Action
       uses: coverallsapp/github-action@v2
       with:
-        file: './coverage/lcov/omniauth-oauth2.lcov'
+        file: coverage/lcov/omniauth-oauth2.lcov
