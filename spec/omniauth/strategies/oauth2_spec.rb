@@ -39,6 +39,22 @@ describe OmniAuth::Strategies::OAuth2 do
     end
   end
 
+  describe "#request_phase" do
+    subject(:instance) { fresh_strategy.new(app, :client_options => {"authorize_url" => "https://example.com/authorize"}) }
+
+    before do
+      allow(instance).to receive(:request) do
+        double("Request", :scheme => 'https', :url => 'https://rp.example.com', :env => {}, :query_string => {})
+      end
+    end
+
+    it do
+      response = instance.request_phase
+      expect(response[0]).to be 302
+      expect(response[1]['location']).to be_start_with "https://example.com/authorize"
+    end
+  end
+
   describe "#authorize_params" do
     subject { fresh_strategy }
 
