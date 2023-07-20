@@ -183,6 +183,34 @@ describe OmniAuth::Strategies::OAuth2 do
         end
       end
     end
+
+    describe 'successful case' do
+      def app
+        lambda do |_env|
+          [200, {}, ["Hello."]]
+        end
+      end
+
+      let(:instance) do
+        fresh_strategy.new(app, :client_options => {"token_url" => "https://example.com/token"})
+      end
+      let(:params) do
+        {"code" => "code", "state" => state}
+      end
+
+      before do
+        allow(instance).to receive(:env).and_return({})
+        allow(instance).to receive(:request) do
+          double("Request", :scheme => 'https', :url => 'https://rp.example.com/callback', :env => {}, :query_string => {}, :params => params)
+        end
+        stub_request(:post, "https://example.com/token").to_return(:status => 200, :body => '{"access_token":"access_token","tokey_type":"bearer"}', :headers => {'Content-Type' => 'application/json'})
+      end
+
+      it do
+        instance.callback_phase
+        expect(instance.access_token).to be_instance_of OAuth2::AccessToken
+      end
+    end
   end
 end
 
