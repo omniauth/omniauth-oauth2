@@ -73,6 +73,8 @@ module OmniAuth
 
         session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
         session["omniauth.state"] = params[:state]
+        # store the callback_url in session during request phase to be re-used during callback phase
+        session["omniauth.callback_url"] = callback_url
 
         params
       end
@@ -121,9 +123,17 @@ module OmniAuth
         {:code_verifier => session.delete("omniauth.pkce.verifier")}
       end
 
+      def callback_url_from_session
+        session.delete("omniauth.callback_url")
+      end
+
       def build_access_token
         verifier = request.params["code"]
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+        client
+          .auth_code
+          .get_token(verifier,
+                     {:redirect_uri => callback_url_from_session}.merge(token_params.to_hash(:symbolize_keys => true)),
+                     deep_symbolize(options.auth_token_params))
       end
 
       def deep_symbolize(options)
