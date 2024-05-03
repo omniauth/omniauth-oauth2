@@ -8,60 +8,40 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos]
-        ruby: [2.5, 2.6, 2.7, head, debug, truffleruby, truffleruby-head]
+        os: [ubuntu-latest, macos-latest]
+        ruby: [2.5, 2.6, 2.7, '3.0', 3.1, 3.2, head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-    - name: Install dependencies
-      run: bundle install
+    - name: Set JRUBY_OPTS environment variable
+      run: echo "JRUBY_OPTS=--debug" >> "$GITHUB_ENV"
+      if: ${{ startsWith(matrix.ruby, 'jruby') }}
     - name: Run tests
       run: bundle exec rake
-  test-jruby:
-    runs-on: ubuntu-18.04
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu, macos]
-        jruby: [jruby, jruby-head]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+    - uses: actions/upload-artifact@v3
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '3.0' }}
       with:
-        ruby-version: ${{ matrix.jruby }}
-        bundler-cache: true
-    - name: Install dependencies
-      env:
-        JRUBY_OPTS: --debug
-      run: bundle install
-    - name: Run tests
-      env:
-        JRUBY_OPTS: --debug
-      run: bundle exec rake
+        name: coverage
+        path: coverage/
+        retention-days: 1
+
   coveralls:
-    runs-on: ubuntu-18.04
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+    - uses: actions/download-artifact@v3
       with:
-        ruby-version: 2.6
-        bundler-cache: true
-    - name: Install dependencies
-      run: bundle install
-    - name: Run tests
-      run: bundle exec rake
+        name: coverage
+        path: coverage/
     - name: Coveralls GitHub Action
-      uses: coverallsapp/github-action@v1.1.2
-      with:
-        github-token: ${{ secrets.github_token }}
-        path-to-lcov: './coverage/lcov/omniauth-oauth2.lcov'
+      uses: coverallsapp/github-action@v2

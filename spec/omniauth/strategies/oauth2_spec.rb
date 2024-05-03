@@ -97,15 +97,85 @@ describe OmniAuth::Strategies::OAuth2 do
   end
 
   describe "#callback_phase" do
-    subject { fresh_strategy }
-    it "calls fail with the client error received" do
-      instance = subject.new("abc", "def")
+    subject(:instance) { fresh_strategy.new("abc", "def") }
+
+    let(:params) { {"error_reason" => "user_denied", "error" => "access_denied", "state" => state} }
+    let(:state) { "secret" }
+
+    before do
       allow(instance).to receive(:request) do
-        double("Request", :params => {"error_reason" => "user_denied", "error" => "access_denied"})
+        double("Request", :params => params)
       end
 
+      allow(instance).to receive(:session) do
+        double("Session", :delete => state)
+      end
+    end
+
+    it "calls fail with the error received" do
       expect(instance).to receive(:fail!).with("user_denied", anything)
+
       instance.callback_phase
+    end
+
+    it "calls fail with the error received if state is missing and CSRF verification is disabled" do
+      params["state"] = nil
+      instance.options.provider_ignores_state = true
+
+      expect(instance).to receive(:fail!).with("user_denied", anything)
+
+      instance.callback_phase
+    end
+
+    it "calls fail with a CSRF error if the state is missing" do
+      params["state"] = nil
+
+      expect(instance).to receive(:fail!).with(:csrf_detected, anything)
+      instance.callback_phase
+    end
+
+    it "calls fail with a CSRF error if the state is invalid" do
+      params["state"] = "invalid"
+
+      expect(instance).to receive(:fail!).with(:csrf_detected, anything)
+      instance.callback_phase
+    end
+
+    describe 'exception handlings' do
+      let(:params) do
+        {"code" => "code", "state" => state}
+      end
+
+      before do
+        allow_any_instance_of(OmniAuth::Strategies::OAuth2).to receive(:build_access_token).and_raise(exception)
+      end
+
+      {
+        :invalid_credentials => [OAuth2::Error, OmniAuth::Strategies::OAuth2::CallbackError],
+        :timeout => [Timeout::Error, Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError],
+        :failed_to_connect => [SocketError]
+      }.each do |error_type, exceptions|
+        exceptions.each do |klass|
+          context "when #{klass}" do
+            let(:exception) { klass.new 'error' }
+
+            it do
+              expect(instance).to receive(:fail!).with(error_type, exception)
+              instance.callback_phase
+            end
+          end
+        end
+      end
+    end
+  end
+
+  describe "#secure_compare" do
+    subject { fresh_strategy }
+
+    it "returns true when the two inputs are the same and false otherwise" do
+      instance = subject.new("abc", "def")
+      expect(instance.send(:secure_compare, "a", "a")).to be true
+      expect(instance.send(:secure_compare, "b", "a")).to be false
     end
   end
 end

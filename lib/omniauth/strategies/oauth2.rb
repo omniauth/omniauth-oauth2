@@ -108,10 +108,10 @@ module OmniAuth
 
         state = session_delete("omniauth.state")
 
-        if error
-          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != state)
+        if !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params["state"], state))
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+        elsif error
+          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
         else
           self.access_token = build_access_token
           self.access_token = access_token.refresh! if access_token.expired?
@@ -119,7 +119,7 @@ module OmniAuth
         end
       rescue ::OAuth2::Error, CallbackError => e
         fail!(:invalid_credentials, e)
-      rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+      rescue ::Timeout::Error, ::Errno::ETIMEDOUT, ::OAuth2::TimeoutError, ::OAuth2::ConnectionError => e
         fail!(:timeout, e)
       rescue ::SocketError => e
         fail!(:failed_to_connect, e)
@@ -182,6 +182,17 @@ module OmniAuth
                              end
         end
         hash
+      end
+
+       # constant-time comparison algorithm to prevent timing attacks
+       def secure_compare(string_a, string_b)
+        return false unless string_a.bytesize == string_b.bytesize
+
+        l = string_a.unpack "C#{string_a.bytesize}"
+
+        res = 0
+        string_b.each_byte { |byte| res |= byte ^ l.shift }
+        res.zero?
       end
 
       # An error that is indicated in the OAuth 2.0 callback.
