@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        ruby: [2.5, 2.6, 2.7, '3.0', 3.1, 3.2, head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
+        ruby: [2.5, 2.6, 2.7, '3.0', 3.1, 3.2, 3.3, head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -27,7 +27,7 @@ jobs:
       if: ${{ startsWith(matrix.ruby, 'jruby') }}
     - name: Run tests
       run: bundle exec rake
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '3.0' }}
       with:
         name: coverage
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: coverage
         path: coverage/
