@@ -14,7 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        ruby: [2.5, 2.6, 2.7, '3.0', 3.1, 3.2, 3.3, head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
+        ruby: [2.6, 2.7, '3.0', 3.1, 3.2, 3.3, head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
+        include:
+          - { os: macos-13, ruby: '2.5' }
     steps:
     - uses: actions/checkout@v4
     - name: Set up Ruby
