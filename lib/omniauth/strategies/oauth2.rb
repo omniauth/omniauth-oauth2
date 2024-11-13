@@ -105,7 +105,7 @@ module OmniAuth
       def pkce_authorize_params
         return {} unless options.pkce
 
-        options.pkce_verifier = SecureRandom.hex(64)
+        options.pkce_verifier ||= SecureRandom.hex(64)
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
         {
