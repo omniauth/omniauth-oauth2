@@ -105,7 +105,7 @@ module OmniAuth
       end
 
       def refresh_access_token
-        self.access_token = access_token&.refresh(token_params.to_hash(symbolize_keys: true), deep_symbolize(options.auth_token_params))
+        self.access_token = access_token&.refresh(token_params.to_hash(stringify_keys: true), deep_symbolize(options.auth_token_params))
       end
 
     protected
