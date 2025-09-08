@@ -100,12 +100,16 @@ module OmniAuth
         fail!(:failed_to_connect, e)
       end
 
+      def symbolized_auth_token_params
+        deep_symbolize(options.auth_token_params)
+      end
+
       def set_access_token_from_hash(hash)
-        self.access_token = ::OAuth2::AccessToken.from_hash(client, hash)
+        self.access_token = ::OAuth2::AccessToken.from_hash(client, hash.update(symbolized_auth_token_params)
       end
 
       def refresh_access_token
-        self.access_token = access_token&.refresh(token_params.to_hash(stringify_keys: true), deep_symbolize(options.auth_token_params))
+        self.access_token = access_token&.refresh(token_params.to_hash(stringify_keys: true), symbolized_auth_token_params)
       end
 
     protected
@@ -131,7 +135,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), symbolized_auth_token_params)
       end
 
       def deep_symbolize(options)
