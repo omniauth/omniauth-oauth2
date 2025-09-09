@@ -89,7 +89,7 @@ module OmniAuth
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
         else
           self.access_token = build_access_token
-          self.access_token = access_token.refresh! if access_token.expired?
+          refresh_access_token if access_token.expired?
           super
         end
       rescue ::OAuth2::Error, CallbackError => e
@@ -98,6 +98,18 @@ module OmniAuth
         fail!(:timeout, e)
       rescue ::SocketError => e
         fail!(:failed_to_connect, e)
+      end
+
+      def symbolized_auth_token_params
+        deep_symbolize(options.auth_token_params)
+      end
+
+      def set_access_token_from_hash(hash)
+        self.access_token = ::OAuth2::AccessToken.from_hash(client, hash.update(symbolized_auth_token_params))
+      end
+
+      def refresh_access_token
+        self.access_token = access_token&.refresh(token_params.to_hash(stringify_keys: true), symbolized_auth_token_params)
       end
 
     protected
@@ -123,7 +135,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), symbolized_auth_token_params)
       end
 
       def deep_symbolize(options)
