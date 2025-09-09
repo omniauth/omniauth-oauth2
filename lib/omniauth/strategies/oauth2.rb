@@ -105,7 +105,7 @@ module OmniAuth
       end
 
       def set_access_token_from_hash(hash)
-        self.access_token = ::OAuth2::AccessToken.from_hash(client, hash.update(symbolized_auth_token_params)
+        self.access_token = ::OAuth2::AccessToken.from_hash(client, hash.update(symbolized_auth_token_params))
       end
 
       def refresh_access_token
