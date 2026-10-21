@@ -10,11 +10,12 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        ruby: ['3.0', 3.1, 3.2, 3.3, 3.4, head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
+        ruby: ['3.0', 3.1, 3.2, 3.3, 3.4, '4.0', head, debug, truffleruby, truffleruby-head, jruby, jruby-head]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
