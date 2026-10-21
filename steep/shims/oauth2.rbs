@@ -1,0 +1,22 @@
+# Additions to the types the oauth2 gem ships, for the parts the strategy
+# uses that they leave out or get wrong. These are for Steep only and
+# aren't shipped with the gem.
+module OAuth2
+  ConnectionError: singleton(Faraday::ConnectionFailed)
+  TimeoutError: singleton(Faraday::TimeoutError)
+
+  class Client
+    # oauth2's types require the block, which is optional.
+    def initialize: (String? client_id, String? client_secret, ?Hash[Symbol, untyped] options) ?{ (Faraday::RackBuilder) -> void } -> void
+                  | ...
+  end
+
+  class AccessToken
+    attr_reader token: String
+    attr_reader expires_at: Integer?
+    attr_accessor refresh_token: String?
+
+    # oauth2's types require #refresh's block, which is optional.
+    def refresh!: (?Hash[untyped, untyped] params, ?Hash[Symbol, untyped] access_token_opts) ?{ (untyped) -> void } -> AccessToken
+  end
+end

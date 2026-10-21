@@ -9,6 +9,10 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+### Added
+
+- RBS type signatures for the strategy, in `sig/`, checked with Steep.
+
 ## [1.9.0] - 2025-12-11
 
 ### Fixed

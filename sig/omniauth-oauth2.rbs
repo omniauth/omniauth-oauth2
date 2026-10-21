@@ -1,0 +1,97 @@
+module OmniAuth
+  module OAuth2
+    VERSION: String
+  end
+
+  module Strategies
+    # An abstract OAuth 2.0 strategy. Provider strategies subclass it and
+    # set client_options (site, authorize_url, and token_url) for their
+    # provider.
+    class OAuth2
+      include Strategy
+      extend Strategy::ClassMethods
+
+      # The options this strategy adds to OmniAuth's. Strategy::Options
+      # answers them through Hashie::Mash's method_missing.
+      interface _Options
+        def client_id: () -> String?
+        def client_secret: () -> String?
+        def client_options: () -> Strategy::Options
+        def authorize_params: () -> Strategy::Options
+        # The options copied into the authorize params, when set
+        def authorize_options: () -> Array[Symbol | String]
+        def token_params: () -> Strategy::Options
+        # The options copied into the token params, when set
+        def token_options: () -> Array[Symbol | String]
+        def auth_token_params: () -> Strategy::Options
+        def provider_ignores_state: () -> bool
+        def pkce: () -> bool
+        def pkce_verifier: () -> String?
+        def pkce_verifier=: (String) -> String
+        # :code_challenge, a callable that takes the verifier, and
+        # :code_challenge_method
+        def pkce_options: () -> Strategy::Options
+      end
+
+      # Gives each subclass the class-level strategy DSL.
+      def self.inherited: (singleton(OAuth2) subclass) -> void
+
+      # The fetcher blocks run with the strategy instance as self.
+      def self.uid: () { () [self: instance] -> untyped } -> Proc
+                  | () -> Proc?
+
+      def self.info: () { () [self: instance] -> Hash[untyped, untyped]? } -> Proc
+                   | () -> Proc?
+
+      def self.extra: () { () [self: instance] -> Hash[untyped, untyped]? } -> Proc
+                    | () -> Proc?
+
+      def self.credentials: () { () [self: instance] -> Hash[untyped, untyped]? } -> Proc
+                          | () -> Proc?
+
+      def options: () -> (Strategy::Options & _Options)
+
+      # Set by the callback phase, which runs before the fetcher blocks that
+      # read it.
+      attr_accessor access_token: ::OAuth2::AccessToken
+
+      def client: () -> ::OAuth2::Client
+
+      def request_phase: () -> rack_response
+
+      def authorize_params: () -> Strategy::Options
+
+      def token_params: () -> Strategy::Options
+
+      def callback_phase: () -> rack_response
+
+      # These are protected in Ruby, which RBS has no way to say.
+      private
+
+      def pkce_authorize_params: () -> Hash[Symbol, untyped]
+
+      def pkce_token_params: () -> Hash[Symbol, String?]
+
+      def build_access_token: () -> ::OAuth2::AccessToken
+
+      def deep_symbolize: (Hash[untyped, untyped] options) -> Hash[Symbol, untyped]
+
+      def options_for: (String option) -> Hash[Symbol, untyped]
+
+      # Compares two strings in constant time, to prevent timing attacks.
+      def secure_compare: (String string_a, String string_b) -> bool
+
+      # An error that is indicated in the OAuth 2.0 callback, such as a
+      # redirect_uri_mismatch.
+      class CallbackError < StandardError
+        attr_accessor error: String | Symbol
+        attr_accessor error_reason: String?
+        attr_accessor error_uri: String?
+
+        def initialize: (String | Symbol error, ?String? error_reason, ?String? error_uri) -> void
+
+        def message: () -> String
+      end
+    end
+  end
+end

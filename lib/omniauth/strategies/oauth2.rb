@@ -48,7 +48,7 @@ module OmniAuth
       end
 
       credentials do
-        hash = {"token" => access_token.token}
+        hash = {"token" => access_token.token} #: Hash[String, String | Integer | bool | nil]
         hash["refresh_token"] = access_token.refresh_token if access_token.expires? && access_token.refresh_token
         hash["expires_at"] = access_token.expires_at if access_token.expires?
         hash["expires"] = access_token.expires?
@@ -63,8 +63,8 @@ module OmniAuth
         options.authorize_params[:state] = SecureRandom.hex(24)
 
         if OmniAuth.config.test_mode
-          @env ||= {}
-          @env["rack.session"] ||= {}
+          test_env = (@env ||= {}) #: Rack::env
+          test_env["rack.session"] ||= {}
         end
 
         params = options.authorize_params
@@ -127,13 +127,15 @@ module OmniAuth
       end
 
       def deep_symbolize(options)
-        options.each_with_object({}) do |(key, value), hash|
+        hash = {} #: Hash[Symbol, untyped]
+        options.each do |key, value|
           hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value
         end
+        hash
       end
 
       def options_for(option)
-        hash = {}
+        hash = {} #: Hash[Symbol, untyped]
         options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
           hash[key.to_sym] = if options[key].respond_to?(:call)
                                options[key].call(env)
@@ -148,10 +150,10 @@ module OmniAuth
        def secure_compare(string_a, string_b)
         return false unless string_a.bytesize == string_b.bytesize
 
-        l = string_a.unpack "C#{string_a.bytesize}"
+        bytes_a = string_a.bytes
 
         res = 0
-        string_b.each_byte { |byte| res |= byte ^ l.shift }
+        string_b.each_byte.with_index { |byte, index| res |= byte ^ bytes_a.fetch(index) }
         res.zero?
       end
 

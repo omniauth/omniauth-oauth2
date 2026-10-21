@@ -1,0 +1,13 @@
+# Additions to the hashie types from gem_rbs_collection, which only declare
+# the class hierarchy. These are for Steep only and aren't shipped with the
+# gem.
+module Hashie
+  class Hash < ::Hash[untyped, untyped]
+    def to_hash: (?::Hash[Symbol, bool] options) -> ::Hash[untyped, untyped]
+  end
+
+  class Mash < Hash
+    # Returns a new instance of the same class.
+    def merge: (*::Hash[untyped, untyped] others) -> self
+  end
+end
