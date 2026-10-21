@@ -1,13 +1,14 @@
 # OmniAuth OAuth2
 
 [![Gem Version](http://img.shields.io/gem/v/omniauth-oauth2.svg)][gem]
-[![Code Climate](http://img.shields.io/codeclimate/maintainability/intridea/omniauth-oauth2.svg)][codeclimate]
-[![Coverage Status](http://img.shields.io/coveralls/intridea/omniauth-oauth2.svg)][coveralls]
-[![Security](https://hakiri.io/github/omniauth/omniauth-oauth2/master.svg)](https://hakiri.io/github/omniauth/omniauth-oauth2/master)
+[![Ruby](https://github.com/omniauth/omniauth-oauth2/actions/workflows/main.yml/badge.svg)][githubactions]
+[![Maintainability](https://qlty.sh/gh/omniauth/projects/omniauth-oauth2/maintainability.svg)][qlty]
+[![Coverage Status](http://img.shields.io/coveralls/omniauth/omniauth-oauth2.svg)][coveralls]
 
 [gem]: https://rubygems.org/gems/omniauth-oauth2
-[codeclimate]: https://codeclimate.com/github/intridea/omniauth-oauth2
-[coveralls]: https://coveralls.io/r/intridea/omniauth-oauth2
+[githubactions]: https://github.com/omniauth/omniauth-oauth2/actions/workflows/main.yml
+[qlty]: https://qlty.sh/gh/omniauth/projects/omniauth-oauth2
+[coveralls]: https://coveralls.io/r/omniauth/omniauth-oauth2
 
 This gem contains a generic OAuth2 strategy for OmniAuth. It is meant to serve
 as a building block strategy for other strategies and not to be used
