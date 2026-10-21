@@ -4,7 +4,7 @@ gem "rake", "~> 13.0"
 
 group :test do
   gem "addressable", "~> 2.3.8", :platforms => %i[jruby ruby_18]
-  gem 'coveralls_reborn', '~> 0.19.0', require: false
+  gem 'coveralls_reborn', '~> 1.0.0', require: false
   gem "json", :platforms => %i[jruby ruby_18 ruby_19]
   gem "mime-types", "~> 1.25", :platforms => %i[jruby ruby_18]
   gem "rack-test"
