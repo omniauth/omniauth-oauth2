@@ -6,8 +6,8 @@ Gem::Specification.new do |gem|
   gem.add_dependency "oauth2",  [">= 2.0.2", "< 3"]
   gem.add_dependency "omniauth", "~> 2.0"
 
-  gem.authors       = ["Michael Bleigh", "Erik Michaels-Ober", "Tom Milewski"]
-  gem.email         = ["michael@intridea.com", "sferik@gmail.com", "tmilewski@gmail.com"]
+  gem.authors       = ["Erik Berlin", "Michael Bleigh", "Tom Milewski"]
+  gem.email         = ["sferik@gmail.com", "michael@intridea.com", "tmilewski@gmail.com"]
   gem.description   = "An abstract OAuth2 strategy for OmniAuth."
   gem.summary       = gem.description
   gem.homepage      = "https://github.com/omniauth/omniauth-oauth2"
