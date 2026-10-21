@@ -28,7 +28,7 @@ jobs:
       if: ${{ startsWith(matrix.ruby, 'jruby') }}
     - name: Run tests
       run: bundle exec rake
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '4.0' }}
       with:
         name: coverage
