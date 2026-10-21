@@ -2,8 +2,10 @@ source "https://rubygems.org"
 
 gem "rake", "~> 13.0"
 
-# RuboCop 1.92 needs Ruby 2.7+, so older Rubies skip the rubocop task.
-gem "rubocop", "~> 1.92.0", :require => false if RUBY_VERSION >= "2.7"
+# RuboCop 1.92 needs Ruby 2.7+, so older Rubies skip the rubocop task. Its
+# Lint/MissingCopEnableDirective cop crashes on TruffleRuby, which skips it
+# too.
+gem "rubocop", "~> 1.92.0", :require => false if RUBY_VERSION >= "2.7" && RUBY_ENGINE != "truffleruby"
 
 # Steep 2.1 needs Ruby 3.3+, so older Rubies skip the steep task. It checks
 # against the types omniauth ships from 2.2.0 on, so use omniauth's master
