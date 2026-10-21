@@ -44,14 +44,14 @@ describe OmniAuth::Strategies::OAuth2 do
 
     before do
       allow(instance).to receive(:request) do
-        double("Request", :scheme => 'https', :url => 'https://rp.example.com', :env => {}, :query_string => {})
+        double("Request", :scheme => "https", :url => "https://rp.example.com", :env => {}, :query_string => {})
       end
     end
 
     it do
       response = instance.request_phase
       expect(response[0]).to be 302
-      expect(response[1]['location']).to be_start_with "https://example.com/authorize"
+      expect(response[1]["location"]).to be_start_with "https://example.com/authorize"
     end
   end
 
@@ -170,7 +170,7 @@ describe OmniAuth::Strategies::OAuth2 do
       instance.callback_phase
     end
 
-    describe 'exception handlings' do
+    describe "exception handlings" do
       let(:params) do
         {"code" => "code", "state" => state}
       end
@@ -182,11 +182,11 @@ describe OmniAuth::Strategies::OAuth2 do
       {
         :invalid_credentials => [OAuth2::Error, OmniAuth::Strategies::OAuth2::CallbackError],
         :timeout => [Timeout::Error, Errno::ETIMEDOUT, OAuth2::TimeoutError, OAuth2::ConnectionError],
-        :failed_to_connect => [SocketError]
+        :failed_to_connect => [SocketError],
       }.each do |error_type, exceptions|
         exceptions.each do |klass|
           context "when #{klass}" do
-            let(:exception) { klass.new 'error' }
+            let(:exception) { klass.new "error" }
 
             it do
               expect(instance).to receive(:fail!).with(error_type, exception)
@@ -197,7 +197,7 @@ describe OmniAuth::Strategies::OAuth2 do
       end
     end
 
-    describe 'successful case' do
+    describe "successful case" do
       def app
         lambda do |_env|
           [200, {}, ["Hello."]]
@@ -214,9 +214,9 @@ describe OmniAuth::Strategies::OAuth2 do
       before do
         allow(instance).to receive(:env).and_return({})
         allow(instance).to receive(:request) do
-          double("Request", :scheme => 'https', :url => 'https://rp.example.com/callback', :env => {}, :query_string => {}, :params => params)
+          double("Request", :scheme => "https", :url => "https://rp.example.com/callback", :env => {}, :query_string => {}, :params => params)
         end
-        stub_request(:post, "https://example.com/token").to_return(:status => 200, :body => '{"access_token":"access_token","tokey_type":"bearer"}', :headers => {'Content-Type' => 'application/json'})
+        stub_request(:post, "https://example.com/token").to_return(:status => 200, :body => '{"access_token":"access_token","tokey_type":"bearer"}', :headers => {"Content-Type" => "application/json"})
       end
 
       it do
@@ -248,7 +248,7 @@ describe OmniAuth::Strategies::OAuth2 do
 
   describe "#options_for" do
     it "returns the set options, with symbol keys, calling any that are callable with the env" do
-      instance = fresh_strategy.new("abc", "def", :authorize_options => ["scope", :prompt, :login_hint], :scope => "email", :prompt => lambda { |env| env.fetch("prompt") }, :login_hint => nil)
+      instance = fresh_strategy.new("abc", "def", :authorize_options => ["scope", :prompt, :login_hint], :scope => "email", :prompt => ->(env) { env.fetch("prompt") }, :login_hint => nil)
       instance.instance_variable_set(:@env, "prompt" => "consent")
       expect(instance.send(:options_for, "authorize")).to eq(:scope => "email", :prompt => "consent")
     end
@@ -284,7 +284,7 @@ end
 
 # Mutant runs a method's mutations against the specs that describe that
 # method, so list the methods these end-to-end specs exercise.
-FLOW_METHODS = %w[client request_phase authorize_params token_params callback_phase pkce_authorize_params pkce_token_params build_access_token deep_symbolize options_for secure_compare].freeze
+FLOW_METHODS = %w[client request_phase authorize_params token_params callback_phase csrf_detected? pkce_authorize_params pkce_token_params build_access_token deep_symbolize options_for secure_compare].freeze
 
 describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression => FLOW_METHODS.map { |name| "OmniAuth::Strategies::OAuth2##{name}" } do
   let(:strategy) do
@@ -319,9 +319,9 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
   end
 
   def stub_token(body, grant_type = "authorization_code")
-    stub_request(:post, "https://example.com/oauth/token").
-      with(:body => hash_including("grant_type" => grant_type)).
-      to_return(:body => JSON.generate(body), :headers => {"Content-Type" => "application/json"})
+    stub_request(:post, "https://example.com/oauth/token")
+      .with(:body => hash_including("grant_type" => grant_type))
+      .to_return(:body => JSON.generate(body), :headers => {"Content-Type" => "application/json"})
   end
 
   def callback
@@ -402,7 +402,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
         option :login_hint, nil
       end
     end
-    let(:options) { {:scope => "email", :prompt => lambda { |env| env["PATH_INFO"] }, :authorize_params => {:access_type => "offline"}} }
+    let(:options) { {:scope => "email", :prompt => ->(env) { env["PATH_INFO"] }, :authorize_params => {:access_type => "offline"}} }
 
     it "adds the authorize params and the set authorize options, calling callable ones with the env" do
       query = authorize_query
@@ -426,18 +426,18 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       stub_token("access_token" => "token")
       session["omniauth.pkce.verifier"] = "verifier"
       callback
-      expect(token_request_body).to include(["code_verifier", "verifier"])
+      expect(token_request_body).to include(%w[code_verifier verifier])
       expect(session).not_to have_key("omniauth.pkce.verifier")
     end
   end
 
   context "with custom PKCE options" do
-    let(:options) { {:pkce => true, :pkce_options => {:code_challenge => lambda { |verifier| "challenge for #{verifier}" }, :code_challenge_method => "plain"}} }
+    let(:options) { {:pkce => true, :pkce_options => {:code_challenge => ->(verifier) { "challenge for #{verifier}" }, :code_challenge_method => "plain"}} }
 
     it "uses them for the challenge" do
       session = {}
       query = authorize_query(session)
-      expect(query).to include("code_challenge" => "challenge for #{session.fetch("omniauth.pkce.verifier")}", "code_challenge_method" => "plain")
+      expect(query).to include("code_challenge" => "challenge for #{session.fetch('omniauth.pkce.verifier')}", "code_challenge_method" => "plain")
     end
   end
 
@@ -452,8 +452,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
   it "sends exactly the grant type, code, and redirect URI, authenticated with the client ID and secret" do
     stub_token("access_token" => "token")
     callback
-    expect(token_request_body).to contain_exactly(["grant_type", "authorization_code"], ["code", "code"], ["redirect_uri", "http://example.org/auth/example/callback?code=code&state=secret"])
-    expect(token_request.headers["Authorization"]).to eq("Basic #{["abc:def"].pack("m0")}")
+    expect(token_request_body).to contain_exactly(%w[grant_type authorization_code], %w[code code], ["redirect_uri", "http://example.org/auth/example/callback?code=code&state=secret"])
+    expect(token_request.headers["Authorization"]).to eq("Basic #{['abc:def'].pack('m0')}")
   end
 
   context "with token params and options" do
@@ -464,12 +464,12 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
         option :token_options, %i[audience]
       end
     end
-    let(:options) { {:audience => lambda { |env| env["PATH_INFO"] }, :token_params => {:redirect_uri => "https://example.org/registered", :resource => "api"}} }
+    let(:options) { {:audience => ->(env) { env["PATH_INFO"] }, :token_params => {:redirect_uri => "https://example.org/registered", :resource => "api"}} }
 
     it "sends them, letting a token param replace the redirect URI" do
       stub_token("access_token" => "token")
       callback
-      expect(token_request_body).to contain_exactly(["grant_type", "authorization_code"], ["code", "code"], ["redirect_uri", "https://example.org/registered"], ["resource", "api"], ["audience", "/auth/example/callback"])
+      expect(token_request_body).to contain_exactly(%w[grant_type authorization_code], %w[code code], ["redirect_uri", "https://example.org/registered"], %w[resource api], ["audience", "/auth/example/callback"])
     end
   end
 
@@ -490,8 +490,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
   end
 
   it "fails with :invalid_credentials when the provider rejects a callback without a code" do
-    stub_request(:post, "https://example.com/oauth/token").
-      to_return(:status => 400, :body => JSON.generate("error" => "invalid_request"), :headers => {"Content-Type" => "application/json"})
+    stub_request(:post, "https://example.com/oauth/token")
+      .to_return(:status => 400, :body => JSON.generate("error" => "invalid_request"), :headers => {"Content-Type" => "application/json"})
     get "/auth/example/callback", {"state" => "secret"}, "rack.session" => session
     expect(token_request_body).to include(["code", ""])
     expect(last_request.env["omniauth.error.type"]).to eq(:invalid_credentials)
@@ -502,6 +502,16 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
     expect(callback_error).to be_a(OmniAuth::Strategies::OAuth2::CallbackError)
     expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq([:csrf_detected, "CSRF detected", nil])
+  end
+
+  context "when the provider ignores state" do
+    let(:options) { {:provider_ignores_state => true} }
+
+    it "accepts a callback without one" do
+      stub_token("access_token" => "token")
+      get "/auth/example/callback", {"code" => "code"}, "rack.session" => session
+      expect(JSON.parse(last_response.body)).to eq("token" => "token", "expires" => false)
+    end
   end
 
   it "fails with :csrf_detected when there's no state" do

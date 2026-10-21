@@ -68,6 +68,10 @@ module OmniAuth
       # These are protected in Ruby, which RBS has no way to say.
       private
 
+      # Whether the callback's state is missing or doesn't match the one the
+      # request phase stored, unless the provider ignores state.
+      def csrf_detected?: () -> bool
+
       def pkce_authorize_params: () -> Hash[Symbol, untyped]
 
       def pkce_token_params: () -> Hash[Symbol, String?]

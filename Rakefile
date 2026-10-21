@@ -12,7 +12,7 @@ begin
   RuboCop::RakeTask.new
 rescue LoadError
   task :rubocop do
-    $stderr.puts "RuboCop is disabled"
+    warn "Skipping RuboCop: it is not installed. It needs Ruby 2.7 or later; run `bundle install` there."
   end
 end
 

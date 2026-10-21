@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "omniauth-oauth2/version"
 
 Gem::Specification.new do |gem|
-  gem.add_dependency "oauth2",  [">= 2.0.2", "< 3"]
+  gem.add_dependency "oauth2", [">= 2.0.2", "< 3"]
   gem.add_dependency "omniauth", "~> 2.0"
 
   gem.authors       = ["Erik Berlin", "Michael Bleigh", "Tom Milewski"]
@@ -15,8 +15,8 @@ Gem::Specification.new do |gem|
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").collect { |f| File.basename(f) }
   gem.files         = `git ls-files`.split("\n")
-  gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.name          = "omniauth-oauth2"
   gem.require_paths = %w[lib]
   gem.version       = OmniAuth::OAuth2::VERSION
+  gem.metadata["rubygems_mfa_required"] = "true"
 end

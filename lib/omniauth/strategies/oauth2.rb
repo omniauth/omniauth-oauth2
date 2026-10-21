@@ -59,7 +59,7 @@ module OmniAuth
         redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
       end
 
-      def authorize_params # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      def authorize_params
         options.authorize_params[:state] = SecureRandom.hex(24)
 
         if OmniAuth.config.test_mode
@@ -81,9 +81,9 @@ module OmniAuth
         options.token_params.merge(options_for("token")).merge(pkce_token_params)
       end
 
-      def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+      def callback_phase
         error = request.params["error_reason"] || request.params["error"]
-        if !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params.fetch("state"), session.delete("omniauth.state")))
+        if csrf_detected?
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         elsif error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
@@ -101,6 +101,12 @@ module OmniAuth
       end
 
     protected
+
+      # Whether the callback's state is missing or doesn't match the one the
+      # request phase stored, unless the provider ignores state.
+      def csrf_detected?
+        !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params.fetch("state"), session.delete("omniauth.state")))
+      end
 
       def pkce_authorize_params
         return {} unless options.pkce
@@ -128,9 +134,7 @@ module OmniAuth
 
       def deep_symbolize(options)
         hash = {} #: Hash[Symbol, untyped]
-        options.each do |key, value|
-          hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value
-        end
+        options.each { |key, value| hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value }
         hash
       end
 

@@ -1,11 +1,17 @@
 AllCops:
+  TargetRubyVersion: 2.5
   NewCops: enable
+  SuggestExtensions: false
 
 Gemspec/RequiredRubyVersion:
   Enabled: false
 
 Layout/AccessModifierIndentation:
   EnforcedStyle: outdent
+
+# Allow Steep type annotations such as `x = {} #: Hash[String, untyped]`.
+Layout/LeadingCommentSpace:
+  AllowSteepAnnotation: true
 
 Layout/LineLength:
   AllowURI: true
@@ -18,7 +24,7 @@ Lint/MissingSuper:
   Enabled: false
 
 Metrics/AbcSize:
-  Max: 18
+  Enabled: false
 
 Metrics/BlockLength:
   Exclude:
@@ -28,11 +34,12 @@ Metrics/BlockNesting:
   Max: 2
 
 Metrics/ClassLength:
-  Max: 110
+  Max: 115
 
+# callback_phase, with its three rescue clauses, is the longest method.
 Metrics/MethodLength:
   CountComments: false
-  Max: 10
+  Max: 16
 
 Metrics/ParameterLists:
   Max: 4
