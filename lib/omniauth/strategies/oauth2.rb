@@ -73,8 +73,8 @@ module OmniAuth
 
         session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
         session["omniauth.state"] = params.fetch(:state)
-        # store the callback_url in session during request phase to be re-used during callback phase
-        session["omniauth.callback_url"] = callback_url
+        # store the effective redirect_uri in session during request phase to be re-used during callback phase
+        session["omniauth.callback_url"] = params[:redirect_uri] || callback_url
 
         params
       end
@@ -133,7 +133,7 @@ module OmniAuth
       end
 
       def callback_url_from_session
-        session.delete("omniauth.callback_url")
+        session.delete("omniauth.callback_url") || callback_url
       end
 
       def build_access_token
