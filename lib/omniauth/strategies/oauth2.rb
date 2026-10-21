@@ -15,7 +15,7 @@ module OmniAuth
       include OmniAuth::Strategy
 
       def self.inherited(subclass)
-        OmniAuth::Strategy.included(subclass)
+        Strategy.included(subclass)
       end
 
       args %i[client_id client_secret]
@@ -72,7 +72,7 @@ module OmniAuth
                         .merge(pkce_authorize_params)
 
         session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
-        session["omniauth.state"] = params[:state]
+        session["omniauth.state"] = params.fetch(:state)
 
         params
       end
@@ -83,7 +83,7 @@ module OmniAuth
 
       def callback_phase # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
-        if !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params["state"], session.delete("omniauth.state")))
+        if !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params.fetch("state"), session.delete("omniauth.state")))
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         elsif error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
@@ -109,9 +109,9 @@ module OmniAuth
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
         {
-          :code_challenge => options.pkce_options[:code_challenge]
+          :code_challenge => options.pkce_options.fetch(:code_challenge)
                                     .call(options.pkce_verifier),
-          :code_challenge_method => options.pkce_options[:code_challenge_method],
+          :code_challenge_method => options.pkce_options.fetch(:code_challenge_method),
         }
       end
 
@@ -136,25 +136,19 @@ module OmniAuth
 
       def options_for(option)
         hash = {} #: Hash[Symbol, untyped]
-        options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
-          hash[key.to_sym] = if options[key].respond_to?(:call)
-                               options[key].call(env)
+        options.public_send(:"#{option}_options").select { |key| options[key] }.each do |key|
+          hash[key.to_sym] = if options.fetch(key).respond_to?(:call)
+                               options.fetch(key).call(env)
                              else
-                               options[key]
+                               options.fetch(key)
                              end
         end
         hash
       end
 
-       # constant-time comparison algorithm to prevent timing attacks
-       def secure_compare(string_a, string_b)
-        return false unless string_a.bytesize == string_b.bytesize
-
-        bytes_a = string_a.bytes
-
-        res = 0
-        string_b.each_byte.with_index { |byte, index| res |= byte ^ bytes_a.fetch(index) }
-        res.zero?
+      # constant-time comparison algorithm to prevent timing attacks
+      def secure_compare(string_a, string_b)
+        Rack::Utils.secure_compare(string_a, string_b)
       end
 
       # An error that is indicated in the OAuth 2.0 callback.

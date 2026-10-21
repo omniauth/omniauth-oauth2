@@ -1,0 +1,13 @@
+# Mutation testing: https://github.com/mbj/mutant
+usage: opensource
+integration:
+  name: rspec
+includes:
+  - lib
+requires:
+  - omniauth-oauth2
+matcher:
+  subjects:
+    - OmniAuth::Strategies::OAuth2*
+mutation:
+  operators: full

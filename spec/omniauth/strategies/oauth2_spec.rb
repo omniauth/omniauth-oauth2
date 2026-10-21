@@ -83,6 +83,19 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.session["omniauth.state"]).to eq("qux")
     end
 
+    it "uses 24 random bytes for the state" do
+      instance = subject.new("abc", "def")
+      expect(instance.authorize_params["state"]).to match(/\A\h{48}\z/)
+    end
+
+    it "doesn't make up a session outside test mode" do
+      OmniAuth.config.test_mode = false
+      instance = subject.new("abc", "def")
+      instance.instance_variable_set(:@env, {})
+      expect { instance.authorize_params }.to raise_error(NoMethodError)
+      expect(instance.env).to eq({})
+    end
+
     it "includes PKCE parameters if enabled" do
       instance = subject.new("abc", "def", :pkce => true)
       expect(instance.authorize_params[:code_challenge]).to be_a(String)
@@ -221,6 +234,31 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.send(:secure_compare, "a", "a")).to be true
       expect(instance.send(:secure_compare, "b", "a")).to be false
     end
+
+    it "returns false when the inputs differ in more than one byte" do
+      expect(fresh_strategy.new("abc", "def").send(:secure_compare, "ab", "ba")).to be false
+    end
+
+    it "returns false when one input starts with the other" do
+      instance = fresh_strategy.new("abc", "def")
+      expect(instance.send(:secure_compare, "secret!", "secret")).to be false
+      expect(instance.send(:secure_compare, "secret", "secret!")).to be false
+    end
+  end
+
+  describe "#options_for" do
+    it "returns the set options, with symbol keys, calling any that are callable with the env" do
+      instance = fresh_strategy.new("abc", "def", :authorize_options => ["scope", :prompt, :login_hint], :scope => "email", :prompt => lambda { |env| env.fetch("prompt") }, :login_hint => nil)
+      instance.instance_variable_set(:@env, "prompt" => "consent")
+      expect(instance.send(:options_for, "authorize")).to eq(:scope => "email", :prompt => "consent")
+    end
+  end
+
+  describe "#deep_symbolize" do
+    it "symbolizes the keys of nested hashes, including Hashie::Mash ones" do
+      options = OmniAuth::Strategy::Options.new("a" => {"b" => 1}, "c" => 2)
+      expect(fresh_strategy.new("abc", "def").send(:deep_symbolize, options)).to eq(:a => {:b => 1}, :c => 2)
+    end
   end
 end
 
@@ -230,10 +268,13 @@ describe OmniAuth::Strategies::OAuth2::CallbackError do
     subject { error }
     it "includes all of the attributes" do
       instance = subject.new("error", "description", "uri")
-      expect(instance.message).to match(/error/)
-      expect(instance.message).to match(/description/)
-      expect(instance.message).to match(/uri/)
+      expect(instance.message).to eq("error | description | uri")
     end
+    it "defaults the reason and URI to nil" do
+      instance = subject.new("error")
+      expect([instance.error, instance.error_reason, instance.error_uri, instance.message]).to eq(["error", nil, nil, "error"])
+    end
+
     it "includes all of the attributes" do
       instance = subject.new(nil, :symbol)
       expect(instance.message).to eq("symbol")
@@ -241,19 +282,30 @@ describe OmniAuth::Strategies::OAuth2::CallbackError do
   end
 end
 
-describe "OmniAuth::Strategies::OAuth2 request and callback" do
+# Mutant runs a method's mutations against the specs that describe that
+# method, so list the methods these end-to-end specs exercise.
+FLOW_METHODS = %w[client request_phase authorize_params token_params callback_phase pkce_authorize_params pkce_token_params build_access_token deep_symbolize options_for secure_compare].freeze
+
+describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression => FLOW_METHODS.map { |name| "OmniAuth::Strategies::OAuth2##{name}" } do
   let(:strategy) do
     Class.new(OmniAuth::Strategies::OAuth2) do
       option :name, "example"
       option :client_options, :site => "https://example.com"
     end
   end
+  let(:options) { {} }
+  let(:strategies) { [] }
   let(:app) do
     strategy_class = strategy
+    strategy_options = options
+    seen = strategies
     Rack::Builder.new do
       use OmniAuth::Test::PhonySession
-      use strategy_class, "abc", "def"
-      run lambda { |env| [200, {}, [JSON.generate(env["omniauth.auth"]["credentials"])]] }
+      use strategy_class, "abc", "def", strategy_options
+      run lambda { |env|
+        seen << env["omniauth.strategy"]
+        [200, {}, [JSON.generate(env["omniauth.auth"]["credentials"])]]
+      }
     end.to_app
   end
   let(:session) { {"omniauth.state" => "secret"} }
@@ -310,5 +362,175 @@ describe "OmniAuth::Strategies::OAuth2 request and callback" do
     stub_token("access_token" => "expired", "refresh_token" => "refresh", "expires_at" => Time.now.to_i - 60)
     stub_token({"access_token" => "fresh", "refresh_token" => "new refresh", "expires_at" => expires_at}, "refresh_token")
     expect(callback).to eq("token" => "fresh", "refresh_token" => "new refresh", "expires_at" => expires_at, "expires" => true)
+  end
+
+  def authorize_query(session = {})
+    post "/auth/example", {}, "rack.session" => session
+    Rack::Utils.parse_query(URI.parse(last_response.headers["Location"]).query)
+  end
+
+  def token_request
+    requests = WebMock::RequestRegistry.instance.requested_signatures.hash.keys.select { |request| request.uri.path == "/oauth/token" }
+    expect(requests.size).to eq(1)
+    requests.first
+  end
+
+  def token_request_body
+    URI.decode_www_form(token_request.body)
+  end
+
+  def callback_error
+    last_request.env["omniauth.error"]
+  end
+
+  it "sends exactly the client ID, response type, redirect URI, and a 24-byte state, and stores the state" do
+    session = {}
+    query = authorize_query(session)
+    expect(query.keys).to contain_exactly("client_id", "response_type", "redirect_uri", "state")
+    expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
+    expect(query["state"]).to match(/\A\h{48}\z/)
+    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state")
+    expect(session["omniauth.state"]).to eq(query["state"])
+  end
+
+  context "with authorize options" do
+    let(:strategy) do
+      Class.new(OmniAuth::Strategies::OAuth2) do
+        option :name, "example"
+        option :client_options, :site => "https://example.com"
+        option :authorize_options, %i[scope prompt login_hint]
+        option :login_hint, nil
+      end
+    end
+    let(:options) { {:scope => "email", :prompt => lambda { |env| env["PATH_INFO"] }, :authorize_params => {:access_type => "offline"}} }
+
+    it "adds the authorize params and the set authorize options, calling callable ones with the env" do
+      query = authorize_query
+      expect(query).to include("scope" => "email", "prompt" => "/auth/example", "access_type" => "offline")
+      expect(query).not_to have_key("login_hint")
+    end
+  end
+
+  context "with PKCE" do
+    let(:options) { {:pkce => true} }
+
+    it "sends the S256 challenge for a 64-byte verifier it stores in the session" do
+      session = {}
+      query = authorize_query(session)
+      verifier = session.fetch("omniauth.pkce.verifier")
+      expect(verifier).to match(/\A\h{128}\z/)
+      expect(query).to include("code_challenge" => Base64.urlsafe_encode64(Digest::SHA256.digest(verifier), :padding => false), "code_challenge_method" => "S256")
+    end
+
+    it "sends the stored verifier with the token request and removes it from the session" do
+      stub_token("access_token" => "token")
+      session["omniauth.pkce.verifier"] = "verifier"
+      callback
+      expect(token_request_body).to include(["code_verifier", "verifier"])
+      expect(session).not_to have_key("omniauth.pkce.verifier")
+    end
+  end
+
+  context "with custom PKCE options" do
+    let(:options) { {:pkce => true, :pkce_options => {:code_challenge => lambda { |verifier| "challenge for #{verifier}" }, :code_challenge_method => "plain"}} }
+
+    it "uses them for the challenge" do
+      session = {}
+      query = authorize_query(session)
+      expect(query).to include("code_challenge" => "challenge for #{session.fetch("omniauth.pkce.verifier")}", "code_challenge_method" => "plain")
+    end
+  end
+
+  it "doesn't send or remove a PKCE verifier without PKCE" do
+    stub_token("access_token" => "token")
+    session["omniauth.pkce.verifier"] = "verifier"
+    callback
+    expect(token_request_body.map(&:first)).not_to include("code_verifier")
+    expect(session).to include("omniauth.pkce.verifier" => "verifier")
+  end
+
+  it "sends exactly the grant type, code, and redirect URI, authenticated with the client ID and secret" do
+    stub_token("access_token" => "token")
+    callback
+    expect(token_request_body).to contain_exactly(["grant_type", "authorization_code"], ["code", "code"], ["redirect_uri", "http://example.org/auth/example/callback?code=code&state=secret"])
+    expect(token_request.headers["Authorization"]).to eq("Basic #{["abc:def"].pack("m0")}")
+  end
+
+  context "with token params and options" do
+    let(:strategy) do
+      Class.new(OmniAuth::Strategies::OAuth2) do
+        option :name, "example"
+        option :client_options, :site => "https://example.com"
+        option :token_options, %i[audience]
+      end
+    end
+    let(:options) { {:audience => lambda { |env| env["PATH_INFO"] }, :token_params => {:redirect_uri => "https://example.org/registered", :resource => "api"}} }
+
+    it "sends them, letting a token param replace the redirect URI" do
+      stub_token("access_token" => "token")
+      callback
+      expect(token_request_body).to contain_exactly(["grant_type", "authorization_code"], ["code", "code"], ["redirect_uri", "https://example.org/registered"], ["resource", "api"], ["audience", "/auth/example/callback"])
+    end
+  end
+
+  context "with auth token params" do
+    let(:options) { {:auth_token_params => {:mode => :query, :param_name => "token"}} }
+
+    it "passes them to oauth2 with symbol keys, as it documents" do
+      stub_token("access_token" => "token")
+      expect_any_instance_of(OAuth2::Strategy::AuthCode).to receive(:get_token).with("code", anything, satisfy { |opts| opts.keys == %i[mode param_name] && opts.values == [:query, "token"] }).and_call_original
+      callback
+    end
+
+    it "builds the access token with them" do
+      stub_token("access_token" => "token")
+      callback
+      expect(strategies.last.access_token.options).to include(:mode => :query, :param_name => "token")
+    end
+  end
+
+  it "fails with :invalid_credentials when the provider rejects a callback without a code" do
+    stub_request(:post, "https://example.com/oauth/token").
+      to_return(:status => 400, :body => JSON.generate("error" => "invalid_request"), :headers => {"Content-Type" => "application/json"})
+    get "/auth/example/callback", {"state" => "secret"}, "rack.session" => session
+    expect(token_request_body).to include(["code", ""])
+    expect(last_request.env["omniauth.error.type"]).to eq(:invalid_credentials)
+  end
+
+  it "fails with :csrf_detected when the state doesn't match" do
+    get "/auth/example/callback", {"code" => "code", "state" => "secret!"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+    expect(callback_error).to be_a(OmniAuth::Strategies::OAuth2::CallbackError)
+    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq([:csrf_detected, "CSRF detected", nil])
+  end
+
+  it "fails with :csrf_detected when there's no state" do
+    get "/auth/example/callback", {"code" => "code"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+  end
+
+  it "fails with the provider's error, description, and URI" do
+    get "/auth/example/callback", {"state" => "secret", "error" => "access_denied", "error_description" => "The user said no", "error_uri" => "https://example.com/errors"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:access_denied)
+    expect(callback_error).to be_a(OmniAuth::Strategies::OAuth2::CallbackError)
+    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq(["access_denied", "The user said no", "https://example.com/errors"])
+  end
+
+  it "fails with the provider's error reason when there's no error" do
+    get "/auth/example/callback", {"state" => "secret", "error_reason" => "user_denied"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:user_denied)
+    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq([nil, "user_denied", nil])
+  end
+
+  it "fails with the provider's error when there's no description or reason" do
+    get "/auth/example/callback", {"state" => "secret", "error" => "access_denied"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:access_denied)
+    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq(["access_denied", nil, nil])
+  end
+
+  it "prefers the provider's error reason, and falls back to it for the description" do
+    get "/auth/example/callback", {"state" => "secret", "error" => "access_denied", "error_reason" => "user_denied"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:user_denied)
+    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq(["access_denied", "user_denied", nil])
   end
 end

@@ -18,3 +18,4 @@ tmp
 *.swp
 .gem_rbs_collection/
 rbs_collection.lock.yaml
+.mutant/
