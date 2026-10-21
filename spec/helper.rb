@@ -1,22 +1,20 @@
 $LOAD_PATH.unshift File.expand_path("..", __FILE__)
 $LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
 
-if RUBY_VERSION >= "1.9"
+# Coverage is measured on CRuby 3.3+ only. SimpleCov 1.3 needs Ruby 3.3,
+# and JRuby and TruffleRuby count lines differently.
+if RUBY_ENGINE == "ruby" && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.3")
   require "simplecov"
   require "simplecov-lcov"
-  require "coveralls"
 
   SimpleCov::Formatter::LcovFormatter.config.report_with_single_file = true
 
   SimpleCov.formatters = [
     SimpleCov::Formatter::HTMLFormatter,
     SimpleCov::Formatter::LcovFormatter,
-    Coveralls::SimpleCov::Formatter
   ]
 
-  SimpleCov.start do
-    minimum_coverage(78.48)
-  end
+  SimpleCov.start "strict"
 end
 
 require "rspec"

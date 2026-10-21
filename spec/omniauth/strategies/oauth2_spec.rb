@@ -196,3 +196,75 @@ describe OmniAuth::Strategies::OAuth2::CallbackError do
     end
   end
 end
+
+describe "OmniAuth::Strategies::OAuth2 request and callback" do
+  let(:strategy) do
+    Class.new(OmniAuth::Strategies::OAuth2) do
+      option :name, "example"
+      option :client_options, :site => "https://example.com"
+    end
+  end
+  let(:app) do
+    strategy_class = strategy
+    Rack::Builder.new do
+      use OmniAuth::Test::PhonySession
+      use strategy_class, "abc", "def"
+      run lambda { |env| [200, {}, [JSON.generate(env["omniauth.auth"]["credentials"])]] }
+    end.to_app
+  end
+  let(:session) { {"omniauth.state" => "secret"} }
+
+  around do |example|
+    validation_phase = OmniAuth.config.request_validation_phase
+    OmniAuth.config.request_validation_phase = nil
+    example.run
+  ensure
+    OmniAuth.config.request_validation_phase = validation_phase
+  end
+
+  def stub_token(body, grant_type = "authorization_code")
+    stub_request(:post, "https://example.com/oauth/token").
+      with(:body => hash_including("grant_type" => grant_type)).
+      to_return(:body => JSON.generate(body), :headers => {"Content-Type" => "application/json"})
+  end
+
+  def callback
+    get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => session
+    JSON.parse(last_response.body)
+  end
+
+  it "redirects the request phase to the authorize URL with a state stored in the session" do
+    session = {}
+    post "/auth/example", {}, "rack.session" => session
+    location = URI.parse(last_response.headers["Location"])
+    query = Rack::Utils.parse_query(location.query)
+    expect(location.to_s).to start_with("https://example.com/oauth/authorize?")
+    expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
+    expect(query["state"]).to eq(session["omniauth.state"])
+  end
+
+  it "exchanges the code for a token that doesn't expire" do
+    stub_token("access_token" => "token")
+    expect(callback).to eq("token" => "token", "expires" => false)
+    expect(a_request(:post, "https://example.com/oauth/token").with(:body => hash_including("code" => "code"))).to have_been_made
+  end
+
+  it "includes the expiry and refresh token of a token that expires" do
+    expires_at = Time.now.to_i + 3600
+    stub_token("access_token" => "token", "refresh_token" => "refresh", "expires_at" => expires_at)
+    expect(callback).to eq("token" => "token", "refresh_token" => "refresh", "expires_at" => expires_at, "expires" => true)
+  end
+
+  it "leaves out the refresh token when an expiring token has none" do
+    expires_at = Time.now.to_i + 3600
+    stub_token("access_token" => "token", "expires_at" => expires_at)
+    expect(callback).to eq("token" => "token", "expires_at" => expires_at, "expires" => true)
+  end
+
+  it "refreshes a token that has already expired" do
+    expires_at = Time.now.to_i + 3600
+    stub_token("access_token" => "expired", "refresh_token" => "refresh", "expires_at" => Time.now.to_i - 60)
+    stub_token({"access_token" => "fresh", "refresh_token" => "new refresh", "expires_at" => expires_at}, "refresh_token")
+    expect(callback).to eq("token" => "fresh", "refresh_token" => "new refresh", "expires_at" => expires_at, "expires" => true)
+  end
+end

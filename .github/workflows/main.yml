@@ -29,7 +29,7 @@ jobs:
     - name: Run tests
       run: bundle exec rake
     - uses: actions/upload-artifact@v4
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '3.0' }}
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '4.0' }}
       with:
         name: coverage
         path: coverage/
