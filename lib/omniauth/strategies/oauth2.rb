@@ -132,17 +132,10 @@ module OmniAuth
         {:code_verifier => session.delete("omniauth.pkce.verifier")}
       end
 
-      def callback_url_from_session
-        session.delete("omniauth.callback_url") || callback_url
-      end
-
       def build_access_token
         verifier = request.params["code"]
-        client
-          .auth_code
-          .get_token(verifier,
-                     {:redirect_uri => callback_url_from_session}.merge(token_params.to_hash(:symbolize_keys => true)),
-                     deep_symbolize(options.auth_token_params))
+        redirect_uri = session.delete("omniauth.callback_url") || callback_url
+        client.auth_code.get_token(verifier, {:redirect_uri => redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
       def deep_symbolize(options)
