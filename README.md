@@ -74,4 +74,5 @@ The maintainers of OmniAuth-OAuth2 and thousands of other packages are working w
 
 ## Supported Ruby Versions
 
-OmniAuth is tested under 2.5, 2.6, 2.7, 3.0, 3.1, 3.2, truffleruby, and JRuby.
+OmniAuth OAuth2 is tested on Ruby 3.0 through 4.0, JRuby, and TruffleRuby,
+on Linux and macOS.
