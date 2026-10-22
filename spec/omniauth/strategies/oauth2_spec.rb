@@ -77,22 +77,22 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.session["omniauth.state"]).not_to be_empty
     end
 
-    it "sets callback_url in session" do
+    it "sets the redirect URI in session" do
       instance = subject.new("abc", "def")
       instance.authorize_params
-      expect(instance.session["omniauth.callback_url"]).not_to be_empty
+      expect(instance.session["omniauth.redirect_uri"]).not_to be_empty
     end
 
     it "sets the overridden redirect_uri from :authorize_params in session" do
       instance = subject.new("abc", "def", :authorize_params => {:redirect_uri => "https://override.example/cb"})
       instance.authorize_params
-      expect(instance.session["omniauth.callback_url"]).to eq("https://override.example/cb")
+      expect(instance.session["omniauth.redirect_uri"]).to eq("https://override.example/cb")
     end
 
     it "sets a redirect_uri given as a proc via :authorize_options in session" do
       instance = subject.new("abc", "def", :authorize_options => [:redirect_uri], :redirect_uri => proc { "https://proc.example/cb" })
       instance.authorize_params
-      expect(instance.session["omniauth.callback_url"]).to eq("https://proc.example/cb")
+      expect(instance.session["omniauth.redirect_uri"]).to eq("https://proc.example/cb")
     end
 
     it "includes custom state in the authorize params" do
@@ -154,7 +154,7 @@ describe OmniAuth::Strategies::OAuth2 do
       instance = subject.new("abc", "def")
 
       allow(instance).to receive(:request).and_return(request_double)
-      allow(instance).to receive(:session).and_return({"omniauth.callback_url" => callback_url})
+      allow(instance).to receive(:session).and_return({"omniauth.redirect_uri" => callback_url})
       allow(instance).to receive(:client).and_return(client_double)
       allow(client_double).to receive(:auth_code).and_return(strategy_double)
 
@@ -166,7 +166,7 @@ describe OmniAuth::Strategies::OAuth2 do
 
     it "removes the stored callback_url from session once used" do
       instance = subject.new("abc", "def")
-      session = {"omniauth.callback_url" => callback_url}
+      session = {"omniauth.redirect_uri" => callback_url}
 
       allow(instance).to receive(:request).and_return(request_double)
       allow(instance).to receive(:session).and_return(session)
@@ -176,7 +176,7 @@ describe OmniAuth::Strategies::OAuth2 do
 
       instance.send(:build_access_token)
 
-      expect(session).not_to have_key("omniauth.callback_url")
+      expect(session).not_to have_key("omniauth.redirect_uri")
     end
 
     it "falls back to the current callback_url when none is stored in session" do
@@ -477,8 +477,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(query.keys).to contain_exactly("client_id", "response_type", "redirect_uri", "state")
     expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
     expect(query["state"]).to match(/\A\h{48}\z/)
-    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state", "omniauth.callback_url")
-    expect(session["omniauth.callback_url"]).to eq(query["redirect_uri"])
+    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state", "omniauth.redirect_uri")
+    expect(session["omniauth.redirect_uri"]).to eq(query["redirect_uri"])
     expect(session["omniauth.state"]).to eq(query["state"])
   end
 

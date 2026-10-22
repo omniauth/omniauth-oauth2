@@ -73,8 +73,8 @@ module OmniAuth
 
         session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
         session["omniauth.state"] = params.fetch(:state)
-        # store the effective redirect_uri in session during request phase to be re-used during callback phase
-        session["omniauth.callback_url"] = params[:redirect_uri] || callback_url
+        # Reused in the token request, which must send the same redirect_uri.
+        session["omniauth.redirect_uri"] = params[:redirect_uri] || callback_url
 
         params
       end
@@ -134,7 +134,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        redirect_uri = session.delete("omniauth.callback_url") || callback_url
+        redirect_uri = session.delete("omniauth.redirect_uri") || callback_url
         client.auth_code.get_token(verifier, {:redirect_uri => redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
