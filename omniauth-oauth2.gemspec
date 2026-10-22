@@ -17,6 +17,7 @@ Gem::Specification.new do |gem|
   gem.name          = "omniauth-oauth2"
   gem.require_paths = %w[lib]
   gem.version       = OmniAuth::OAuth2::VERSION
+  gem.required_ruby_version = ">= 2.5"
   gem.metadata["changelog_uri"] = "#{gem.homepage}/blob/master/CHANGELOG.md"
   gem.metadata["rubygems_mfa_required"] = "true"
 end
