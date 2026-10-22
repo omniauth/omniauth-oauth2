@@ -380,7 +380,7 @@ end
 
 # Mutant runs a method's mutations against the specs that describe that
 # method, so list the methods these end-to-end specs exercise.
-FLOW_METHODS = %w[client request_phase authorize_params token_params callback_phase csrf_detected? store_sign_in stored_sign_in stored_sign_ins pkce_authorize_params pkce_token_params fetch_access_token build_access_token deep_symbolize options_for secure_compare].freeze
+FLOW_METHODS = %w[client request_phase authorize_params callback_sign_in_key token_params callback_phase csrf_detected? store_sign_in stored_sign_in stored_sign_ins pkce_authorize_params pkce_token_params fetch_access_token build_access_token deep_symbolize options_for secure_compare].freeze
 
 describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression => FLOW_METHODS.map { |name| "OmniAuth::Strategies::OAuth2##{name}" } do
   let(:strategy) do
@@ -490,7 +490,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(query.keys).to contain_exactly("client_id", "response_type", "redirect_uri", "state")
     expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
     expect(query["state"]).to match(/\A\h{48}\z/)
-    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state", "omniauth.redirect_uri", "omniauth.oauth2")
+    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state", "omniauth.redirect_uri", "omniauth.oauth2", "omniauth.sign_ins")
+    expect(session["omniauth.sign_ins"]).to eq(query["state"] => {"origin" => nil, "params" => {}})
     expect(session["omniauth.redirect_uri"]).to eq(query["redirect_uri"])
     expect(session["omniauth.state"]).to eq(query["state"])
     expect(session["omniauth.oauth2"]).to eq(query["state"] => {"redirect_uri" => query["redirect_uri"]})
@@ -522,12 +523,14 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
 
       finish_sign_in(session, first["state"])
       expect(last_request.env["omniauth.error.type"]).to be_nil
+      expect(last_request.env.values_at("omniauth.origin", "omniauth.params")).to eq([nil, {"tab" => "1"}])
       expect(token_request_body).to include(["redirect_uri", first["redirect_uri"]], ["code_verifier", first_verifier])
       expect(session["omniauth.oauth2"].keys).to eq([second["state"]])
       expect(session.keys).not_to include("omniauth.state", "omniauth.redirect_uri", "omniauth.pkce.verifier")
 
       finish_sign_in(session, second["state"])
       expect(last_request.env["omniauth.error.type"]).to be_nil
+      expect(last_request.env.values_at("omniauth.origin", "omniauth.params")).to eq([nil, {"tab" => "2"}])
       expect(token_request_body).to include(["redirect_uri", second["redirect_uri"]])
       expect(token_request_body.assoc("code_verifier")).not_to eq(["code_verifier", first_verifier])
       expect(session["omniauth.oauth2"]).to eq({})

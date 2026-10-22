@@ -70,6 +70,9 @@ module OmniAuth
 
       def authorize_params: () -> Strategy::Options
 
+      # The state the provider sends back to the callback.
+      def callback_sign_in_key: () -> String?
+
       def token_params: () -> Strategy::Options
 
       def callback_phase: () -> rack_response

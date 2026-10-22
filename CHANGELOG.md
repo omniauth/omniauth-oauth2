@@ -18,13 +18,16 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
   `session["omniauth.oauth2"]`. The `omniauth.state`,
   `omniauth.redirect_uri`, and `omniauth.pkce.verifier` keys still hold the
   latest sign-in, and the callback falls back to them, so provider gems
-  and tests that set them keep working. ([#195])
+  and tests that set them keep working. The strategy also passes the state
+  to OmniAuth's `remember_sign_in`, so each callback gets its own sign-in's
+  `omniauth.origin` and `omniauth.params`. ([#195])
 
 ### Changed
 
-- Require omniauth `~> 2.2`, so apps can set `OmniAuth.config.allowed_hosts`
-  to reject forged hosts in callback URLs. See
-  [GHSA-m27g-v28p-f9fx](https://github.com/omniauth/omniauth/security/advisories/GHSA-m27g-v28p-f9fx).
+- Require omniauth 2.3.1 or later, so apps can set
+  `OmniAuth.config.allowed_hosts` to reject forged hosts in callback URLs
+  (see [GHSA-m27g-v28p-f9fx](https://github.com/omniauth/omniauth/security/advisories/GHSA-m27g-v28p-f9fx)),
+  and so each sign-in gets its own `omniauth.origin` and `omniauth.params`.
 - Include the refresh token in the credentials whenever the provider
   returns one, not only when the access token expires. Some providers,
   like Twitch, issue expiring tokens without saying when they expire.

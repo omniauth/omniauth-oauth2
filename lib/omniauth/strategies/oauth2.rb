@@ -87,8 +87,16 @@ module OmniAuth
         session["omniauth.state"] = state
         session["omniauth.redirect_uri"] = redirect_uri
         store_sign_in(state.to_s, redirect_uri)
+        # Lets OmniAuth give the callback this sign-in's origin and params.
+        remember_sign_in(state.to_s)
 
         params
+      end
+
+      # The state the provider sends back, which OmniAuth uses to find the
+      # origin and params that remember_sign_in stored.
+      def callback_sign_in_key
+        request.params["state"]
       end
 
       def token_params
