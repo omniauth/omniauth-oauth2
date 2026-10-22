@@ -1,0 +1,52 @@
+# Releases the gem to RubyGems.org with trusted publishing whenever a
+# version tag is pushed, so no API key is stored in the repository. Bump
+# OmniAuth::OAuth2::VERSION, update CHANGELOG.md and commit, then tag the
+# commit and push it:
+#
+#   bundle exec rake release
+#
+# Run locally, that task only tags and pushes (see the Rakefile). This
+# workflow runs it again to build and push the gem.
+#
+# The gem is pushed with a signed attestation of where it was built.
+name: Push Gem
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    if: github.repository == 'omniauth/omniauth-oauth2'
+    runs-on: ubuntu-latest
+    # Must match the environment in the RubyGems.org trusted publisher. The
+    # environment only accepts deployments from v* tags.
+    environment: release
+    permissions:
+      id-token: write # exchange the GitHub OIDC token for a RubyGems.org API key
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+      with:
+        ruby-version: '4.0'
+        # No cache, so a poisoned cache from another workflow can't reach a release.
+        bundler-cache: false
+    - name: Install dependencies
+      run: bundle install
+    - name: Check that the tag matches OmniAuth::OAuth2::VERSION
+      run: |
+        version="v$(ruby -Ilib -romniauth-oauth2/version -e 'print OmniAuth::OAuth2::VERSION')"
+        if [ "$version" != "$GITHUB_REF_NAME" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME doesn't match OmniAuth::OAuth2::VERSION ($version)"
+          exit 1
+        fi
+    # Runs rake release. The tag already exists, so it skips tagging and
+    # git pushes and only builds and pushes the gem.
+    - name: Release
+      uses: rubygems/release-gem@7f9650160c1a4e7989fdc9855807bdbd421d8b6b # v1.4.1
