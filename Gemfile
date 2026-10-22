@@ -7,13 +7,8 @@ gem "rake", "~> 13.0"
 # too.
 gem "rubocop", "~> 1.92.0", :require => false if RUBY_VERSION >= "2.7" && RUBY_ENGINE != "truffleruby"
 
-# Steep 2.1 needs Ruby 3.3+, so older Rubies skip the steep task. It checks
-# against the types omniauth ships from 2.2.0 on, so use omniauth's master
-# branch until 2.2.0 is released.
-if RUBY_VERSION >= "3.3"
-  gem "omniauth", :git => "https://github.com/omniauth/omniauth.git"
-  gem "steep", "~> 2.1", :require => false, :platforms => :mri
-end
+# Steep 2.1 needs Ruby 3.3+, so older Rubies skip the steep task.
+gem "steep", "~> 2.1", :require => false, :platforms => :mri if RUBY_VERSION >= "3.3"
 
 # Mutant needs Ruby 3.3+, so older Rubies skip the mutant task.
 if RUBY_VERSION >= "3.3"

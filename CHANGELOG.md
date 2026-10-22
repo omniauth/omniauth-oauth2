@@ -15,6 +15,9 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ### Changed
 
+- Require omniauth `~> 2.2`, so apps can set `OmniAuth.config.allowed_hosts`
+  to reject forged hosts in callback URLs. See
+  [GHSA-m27g-v28p-f9fx](https://github.com/omniauth/omniauth/security/advisories/GHSA-m27g-v28p-f9fx).
 - Include the refresh token in the credentials whenever the provider
   returns one, not only when the access token expires. Some providers,
   like Twitch, issue expiring tokens without saying when they expire.
