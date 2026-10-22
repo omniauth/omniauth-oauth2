@@ -68,5 +68,5 @@ That's pretty much it!
 
 ## Supported Ruby Versions
 
-OmniAuth OAuth2 is tested on Ruby 3.0 through 4.0, JRuby, and TruffleRuby,
+OmniAuth OAuth2 is tested on Ruby 2.5 through 4.0, JRuby, and TruffleRuby,
 on Linux and macOS.
