@@ -519,6 +519,21 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
   end
 
+  it "fails with :csrf_detected when the session has no state" do
+    get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => {}
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+  end
+
+  it "fails with :csrf_detected when neither the callback nor the session has a state" do
+    get "/auth/example/callback", {"code" => "code"}, "rack.session" => {}
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+  end
+
+  it "fails with :csrf_detected when the state isn't a string" do
+    get "/auth/example/callback", {"code" => "code", "state" => ["secret"]}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+  end
+
   it "fails with the provider's error, description, and URI" do
     get "/auth/example/callback", {"state" => "secret", "error" => "access_denied", "error_description" => "The user said no", "error_uri" => "https://example.com/errors"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:access_denied)

@@ -105,7 +105,10 @@ module OmniAuth
       # Whether the callback's state is missing or doesn't match the one the
       # request phase stored, unless the provider ignores state.
       def csrf_detected?
-        !options.provider_ignores_state && (request.params["state"].to_s.empty? || !secure_compare(request.params.fetch("state"), session.delete("omniauth.state")))
+        return false if options.provider_ignores_state
+
+        state = request.params["state"].to_s
+        state.empty? || !secure_compare(state, session.delete("omniauth.state").to_s)
       end
 
       def pkce_authorize_params

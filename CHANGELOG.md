@@ -13,6 +13,11 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 - RBS type signatures for the strategy, in `sig/`, checked with Steep.
 
+### Fixed
+
+- Fail with `csrf_detected` instead of raising `NoMethodError` when the
+  session has no stored state or the `state` param isn't a string. ([#189])
+
 ## [1.9.0] - 2025-12-11
 
 ### Fixed
@@ -129,3 +134,4 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [#152]: https://github.com/omniauth/omniauth-oauth2/pull/152
 [#169]: https://github.com/omniauth/omniauth-oauth2/pull/169
 [#174]: https://github.com/omniauth/omniauth-oauth2/pull/174
+[#189]: https://github.com/omniauth/omniauth-oauth2/issues/189
