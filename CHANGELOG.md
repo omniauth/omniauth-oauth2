@@ -9,6 +9,8 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-22
+
 ### Added
 
 - RBS type signatures for the strategy, in `sig/`, checked with Steep.
@@ -24,6 +26,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ### Changed
 
+- Require Ruby 2.5 or later.
 - Require omniauth 2.3.1 or later, so apps can set
   `OmniAuth.config.allowed_hosts` to reject forged hosts in callback URLs
   (see [GHSA-m27g-v28p-f9fx](https://github.com/omniauth/omniauth/security/advisories/GHSA-m27g-v28p-f9fx)),
@@ -35,6 +38,9 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 - Fail the request phase with `missing_client_id` when no client ID is
   configured, instead of redirecting to the provider with an authorize
   request it can only reject. ([#65])
+- The gem includes only `lib`, `sig`, the license, the README, and the
+  security policy, not the specs, changelog, CI workflows, or tool
+  configs. ([#179])
 
 ### Removed
 
@@ -141,7 +147,8 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [1.0.0.pr1] - 2011-10-13
 
-[Unreleased]: https://github.com/omniauth/omniauth-oauth2/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.7.2...v1.8.0
 [1.7.3]: https://github.com/omniauth/omniauth-oauth2/compare/v1.7.2...v1.7.3
@@ -177,6 +184,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [#161]: https://github.com/omniauth/omniauth-oauth2/issues/161
 [#169]: https://github.com/omniauth/omniauth-oauth2/pull/169
 [#174]: https://github.com/omniauth/omniauth-oauth2/pull/174
+[#179]: https://github.com/omniauth/omniauth-oauth2/pull/179
 [#184]: https://github.com/omniauth/omniauth-oauth2/pull/184
 [#189]: https://github.com/omniauth/omniauth-oauth2/issues/189
 [#195]: https://github.com/omniauth/omniauth-oauth2/issues/195

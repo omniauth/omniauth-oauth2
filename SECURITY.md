@@ -2,13 +2,7 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version  | Supported          |
-| -------  | ------------------ |
-| 1.7.x    | :white_check_mark: |
-| <= 1.6.x | :x:                |
+Only the most recent release of omniauth-oauth2 receives security updates.
 
 ## Security contact information
 
