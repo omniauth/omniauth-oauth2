@@ -449,6 +449,11 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(callback).to eq("token" => "token", "refresh_token" => "refresh", "expires_at" => expires_at, "expires" => true)
   end
 
+  it "includes the refresh token of a token that doesn't expire" do
+    stub_token("access_token" => "token", "refresh_token" => "refresh")
+    expect(callback).to eq("token" => "token", "refresh_token" => "refresh", "expires" => false)
+  end
+
   it "leaves out the refresh token when an expiring token has none" do
     expires_at = Time.now.to_i + 3600
     stub_token("access_token" => "token", "expires_at" => expires_at)

@@ -13,6 +13,13 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 - RBS type signatures for the strategy, in `sig/`, checked with Steep.
 
+### Changed
+
+- Include the refresh token in the credentials whenever the provider
+  returns one, not only when the access token expires. Some providers,
+  like Twitch, issue expiring tokens without saying when they expire.
+  ([#122])
+
 ### Removed
 
 - The `pkce_verifier` option. Setting it never had any effect, since the
@@ -145,6 +152,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [1.0.0.pr1]: https://github.com/omniauth/omniauth-oauth2/releases/tag/v1.0.0.pr1
 
 [#93]: https://github.com/omniauth/omniauth-oauth2/issues/93
+[#122]: https://github.com/omniauth/omniauth-oauth2/issues/122
 [#138]: https://github.com/omniauth/omniauth-oauth2/issues/138
 [#142]: https://github.com/omniauth/omniauth-oauth2/pull/142
 [#146]: https://github.com/omniauth/omniauth-oauth2/pull/146
