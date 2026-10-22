@@ -117,13 +117,15 @@ module OmniAuth
       def secure_compare: (String string_a, String string_b) -> bool
 
       # An error that is indicated in the OAuth 2.0 callback, such as a
-      # redirect_uri_mismatch.
+      # redirect_uri_mismatch, with the provider's error, error_description,
+      # error_uri, and, from some providers, error_reason.
       class CallbackError < StandardError
-        attr_accessor error: String | Symbol
-        attr_accessor error_reason: String?
+        attr_accessor error: String | Symbol | nil
+        attr_accessor error_description: String?
         attr_accessor error_uri: String?
+        attr_accessor error_reason: String?
 
-        def initialize: (String | Symbol error, ?String? error_reason, ?String? error_uri) -> void
+        def initialize: (String | Symbol | nil error, ?String? error_description, ?String? error_uri, ?error_reason: String?) -> void
 
         def message: () -> String
       end

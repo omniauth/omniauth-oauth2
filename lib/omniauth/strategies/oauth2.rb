@@ -108,7 +108,7 @@ module OmniAuth
         if csrf_detected?
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
         elsif error
-          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"], request.params["error_uri"], :error_reason => request.params["error_reason"]))
         else
           self.access_token = fetch_access_token
           super
@@ -221,19 +221,22 @@ module OmniAuth
         Rack::Utils.secure_compare(string_a, string_b)
       end
 
-      # An error that is indicated in the OAuth 2.0 callback.
-      # This could be a `redirect_uri_mismatch` or other
+      # An error that is indicated in the OAuth 2.0 callback, such as a
+      # redirect_uri_mismatch, with the provider's error, error_description,
+      # and error_uri params. Some providers, like Facebook, also send an
+      # error_reason, such as user_denied.
       class CallbackError < StandardError
-        attr_accessor :error, :error_reason, :error_uri
+        attr_accessor :error, :error_description, :error_uri, :error_reason
 
-        def initialize(error, error_reason = nil, error_uri = nil)
+        def initialize(error, error_description = nil, error_uri = nil, error_reason: nil)
           self.error = error
-          self.error_reason = error_reason
+          self.error_description = error_description
           self.error_uri = error_uri
+          self.error_reason = error_reason
         end
 
         def message
-          [error, error_reason, error_uri].compact.join(" | ")
+          [error, error_reason, error_description, error_uri].compact.join(" | ")
         end
       end
     end

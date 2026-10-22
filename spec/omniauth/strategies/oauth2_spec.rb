@@ -369,17 +369,19 @@ describe OmniAuth::Strategies::OAuth2::CallbackError do
   describe "#message" do
     subject { error }
     it "includes all of the attributes" do
-      instance = subject.new("error", "description", "uri")
-      expect(instance.message).to eq("error | description | uri")
-    end
-    it "defaults the reason and URI to nil" do
-      instance = subject.new("error")
-      expect([instance.error, instance.error_reason, instance.error_uri, instance.message]).to eq(["error", nil, nil, "error"])
+      instance = subject.new("error", "description", "uri", :error_reason => "reason")
+      expect([instance.error, instance.error_description, instance.error_uri, instance.error_reason]).to eq(%w[error description uri reason])
+      expect(instance.message).to eq("error | reason | description | uri")
     end
 
-    it "includes all of the attributes" do
-      instance = subject.new(nil, :symbol)
-      expect(instance.message).to eq("symbol")
+    it "defaults the description, URI, and reason to nil" do
+      instance = subject.new("error")
+      expect([instance.error, instance.error_description, instance.error_uri, instance.error_reason, instance.message]).to eq(["error", nil, nil, nil, "error"])
+    end
+
+    it "leaves out the attributes that aren't set" do
+      instance = subject.new(nil, "description", :error_reason => "reason")
+      expect(instance.message).to eq("reason | description")
     end
   end
 end
@@ -758,7 +760,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       stub_request(:post, "https://example.com/oauth/token").to_return(:status => 200, :body => "", :headers => {"Content-Type" => "application/json"})
       get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => session
       expect(last_request.env["omniauth.error.type"]).to eq(:invalid_credentials)
-      expect([callback_error.error, callback_error.error_reason]).to eq([:invalid_credentials, "No access token"])
+      expect([callback_error.error, callback_error.error_description]).to eq([:invalid_credentials, "No access token"])
     end
   end
 
@@ -834,7 +836,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     get "/auth/example/callback", {"code" => "code", "state" => "secret!"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
     expect(callback_error).to be_a(OmniAuth::Strategies::OAuth2::CallbackError)
-    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq([:csrf_detected, "CSRF detected", nil])
+    expect([callback_error.error, callback_error.error_description, callback_error.error_uri, callback_error.error_reason]).to eq([:csrf_detected, "CSRF detected", nil, nil])
   end
 
   context "when the provider ignores state" do
@@ -873,24 +875,25 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     get "/auth/example/callback", {"state" => "secret", "error" => "access_denied", "error_description" => "The user said no", "error_uri" => "https://example.com/errors"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:access_denied)
     expect(callback_error).to be_a(OmniAuth::Strategies::OAuth2::CallbackError)
-    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq(["access_denied", "The user said no", "https://example.com/errors"])
+    expect([callback_error.error, callback_error.error_description, callback_error.error_uri, callback_error.error_reason]).to eq(["access_denied", "The user said no", "https://example.com/errors", nil])
   end
 
   it "fails with the provider's error reason when there's no error" do
     get "/auth/example/callback", {"state" => "secret", "error_reason" => "user_denied"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:user_denied)
-    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq([nil, "user_denied", nil])
+    expect([callback_error.error, callback_error.error_description, callback_error.error_uri, callback_error.error_reason]).to eq([nil, nil, nil, "user_denied"])
   end
 
   it "fails with the provider's error when there's no description or reason" do
     get "/auth/example/callback", {"state" => "secret", "error" => "access_denied"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:access_denied)
-    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq(["access_denied", nil, nil])
+    expect([callback_error.error, callback_error.error_description, callback_error.error_uri, callback_error.error_reason]).to eq(["access_denied", nil, nil, nil])
   end
 
-  it "prefers the provider's error reason, and falls back to it for the description" do
-    get "/auth/example/callback", {"state" => "secret", "error" => "access_denied", "error_reason" => "user_denied"}, "rack.session" => session
+  it "fails with the provider's error reason, keeping it apart from the description, as Facebook sends them" do
+    get "/auth/example/callback", {"state" => "secret", "error" => "access_denied", "error_reason" => "user_denied", "error_description" => "Permissions error"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:user_denied)
-    expect([callback_error.error, callback_error.error_reason, callback_error.error_uri]).to eq(["access_denied", "user_denied", nil])
+    expect([callback_error.error, callback_error.error_description, callback_error.error_uri, callback_error.error_reason]).to eq(["access_denied", "Permissions error", nil, "user_denied"])
+    expect(callback_error.message).to eq("access_denied | user_denied | Permissions error")
   end
 end

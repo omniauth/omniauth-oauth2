@@ -9,6 +9,16 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `CallbackError#error_reason` is now only the provider's
+  `error_reason` param, such as Facebook's `user_denied`. The
+  `error_description` param, which `error_reason` used to hold when the
+  provider sent one, is now `CallbackError#error_description`. The second
+  argument to `CallbackError.new` is the description, and the reason is
+  the `error_reason:` keyword. `CallbackError#message` includes all four.
+  ([#69])
+
 ### Removed
 
 - **Breaking:** the `omniauth.state`, `omniauth.redirect_uri`, and
@@ -198,6 +208,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [1.0.0.pr1]: https://github.com/omniauth/omniauth-oauth2/releases/tag/v1.0.0.pr1
 
 [#65]: https://github.com/omniauth/omniauth-oauth2/issues/65
+[#69]: https://github.com/omniauth/omniauth-oauth2/issues/69
 [#93]: https://github.com/omniauth/omniauth-oauth2/issues/93
 [#122]: https://github.com/omniauth/omniauth-oauth2/issues/122
 [#138]: https://github.com/omniauth/omniauth-oauth2/issues/138
