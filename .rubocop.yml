@@ -34,7 +34,7 @@ Metrics/BlockNesting:
   Max: 2
 
 Metrics/ClassLength:
-  Max: 120
+  Max: 160
 
 # callback_phase, with its three rescue clauses, is the longest method.
 Metrics/MethodLength:

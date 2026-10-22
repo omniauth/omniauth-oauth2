@@ -18,6 +18,11 @@ module OmniAuth
         Strategy.included(subclass)
       end
 
+      # How many sign-ins can be in progress at once, for example in several
+      # tabs. Starting another drops the oldest. Each one adds about 300
+      # bytes to the session, which may be a 4 KB cookie.
+      MAX_STORED_SIGN_INS = 5
+
       args %i[client_id client_secret]
 
       option :client_id, nil
@@ -74,11 +79,14 @@ module OmniAuth
                         .merge(options_for("authorize"))
                         .merge(pkce_authorize_params)
 
-        session["omniauth.state"] = params.fetch(:state)
+        state = params.fetch(:state)
         # Reused in the token request, which must send the same redirect_uri.
         # oauth2 gives a client_options redirect_uri precedence in the
         # authorize URL, so it does here too.
-        session["omniauth.redirect_uri"] = client.options[:redirect_uri] || params[:redirect_uri] || callback_url
+        redirect_uri = client.options[:redirect_uri] || params[:redirect_uri] || callback_url
+        session["omniauth.state"] = state
+        session["omniauth.redirect_uri"] = redirect_uri
+        store_sign_in(state.to_s, redirect_uri)
 
         params
       end
@@ -88,7 +96,8 @@ module OmniAuth
       end
 
       def callback_phase
-        @stored_redirect_uri = session.delete("omniauth.redirect_uri")
+        # Take what the request phase stored, even if the callback fails.
+        stored_sign_in
         error = request.params["error_reason"] || request.params["error"]
         if csrf_detected?
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
@@ -114,7 +123,47 @@ module OmniAuth
         return false if options.provider_ignores_state
 
         state = request.params["state"].to_s
-        state.empty? || !secure_compare(state, session.delete("omniauth.state").to_s)
+        state.empty? || !secure_compare(state, stored_sign_in.fetch("state").to_s)
+      end
+
+      # Stores the state, redirect URI, and PKCE verifier of a sign-in by its
+      # state, so several can be in progress at once.
+      def store_sign_in(state, redirect_uri)
+        return if state.empty?
+
+        sign_in = {"redirect_uri" => redirect_uri}
+        sign_in["pkce_verifier"] = session.fetch("omniauth.pkce.verifier") if options.pkce
+        sign_ins = stored_sign_ins
+        sign_ins.delete(state)
+        sign_ins[state] = sign_in
+        session["omniauth.oauth2"] = sign_ins.to_a.last(MAX_STORED_SIGN_INS).to_h
+      end
+
+      # What the request phase stored for this callback's state, removed from
+      # the session. Without a stored sign-in for the state, it comes from the
+      # omniauth.state and omniauth.redirect_uri keys, which hold the latest
+      # sign-in and which provider gems and tests set directly.
+      def stored_sign_in
+        @stored_sign_in ||= begin
+          fallback = {"state" => session.delete("omniauth.state"), "redirect_uri" => session.delete("omniauth.redirect_uri")}
+          state = request.params["state"]
+          sign_ins = stored_sign_ins
+          key = sign_ins.keys.detect { |stored| secure_compare(stored, state) } if state.instance_of?(String)
+          sign_in = sign_ins.delete(key)
+          if sign_in
+            session["omniauth.oauth2"] = sign_ins
+            sign_in.merge("state" => key)
+          else
+            fallback
+          end
+        end
+      end
+
+      # A copy of the stored sign-ins, which are changed by assigning the
+      # session key, not in place.
+      def stored_sign_ins
+        sign_ins = session["omniauth.oauth2"]
+        sign_ins.is_a?(Hash) ? sign_ins.dup : {}
       end
 
       def pkce_authorize_params
@@ -135,7 +184,8 @@ module OmniAuth
       def pkce_token_params
         return {} unless options.pkce
 
-        {:code_verifier => session.delete("omniauth.pkce.verifier")}
+        verifier = session.delete("omniauth.pkce.verifier")
+        {:code_verifier => stored_sign_in.fetch("pkce_verifier", verifier)}
       end
 
       # The access token from the callback's code, refreshed if it's already
@@ -147,7 +197,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        redirect_uri = @stored_redirect_uri || session.delete("omniauth.redirect_uri") || callback_url
+        redirect_uri = stored_sign_in.fetch("redirect_uri") || callback_url
         client.auth_code.get_token(verifier, {:redirect_uri => redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 

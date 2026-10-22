@@ -12,6 +12,13 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 ### Added
 
 - RBS type signatures for the strategy, in `sig/`, checked with Steep.
+- Support up to 5 sign-ins in progress at once, for example in several
+  tabs, instead of failing all but the latest with `csrf_detected`. Each
+  one's redirect URI and PKCE verifier are stored by state in
+  `session["omniauth.oauth2"]`. The `omniauth.state`,
+  `omniauth.redirect_uri`, and `omniauth.pkce.verifier` keys still hold the
+  latest sign-in, and the callback falls back to them, so provider gems
+  and tests that set them keep working. ([#195])
 
 ### Changed
 
@@ -169,3 +176,4 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [#174]: https://github.com/omniauth/omniauth-oauth2/pull/174
 [#184]: https://github.com/omniauth/omniauth-oauth2/pull/184
 [#189]: https://github.com/omniauth/omniauth-oauth2/issues/189
+[#195]: https://github.com/omniauth/omniauth-oauth2/issues/195
