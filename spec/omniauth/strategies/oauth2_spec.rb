@@ -538,11 +538,30 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(session).to include("omniauth.pkce.verifier" => "verifier")
   end
 
-  it "sends exactly the grant type, code, and redirect URI, authenticated with the client ID and secret" do
+  it "sends exactly the grant type, code, and current callback URL when no redirect URI was stored, authenticated with the client ID and secret" do
     stub_token("access_token" => "token")
     callback
     expect(token_request_body).to contain_exactly(%w[grant_type authorization_code], %w[code code], ["redirect_uri", "http://example.org/auth/example/callback?code=code&state=secret"])
     expect(token_request.headers["Authorization"]).to eq("Basic #{['abc:def'].pack('m0')}")
+  end
+
+  it "sends the token request the same redirect URI as the authorize request, and removes it from the session" do
+    session = {}
+    post "/auth/example?lang=en", {}, "rack.session" => session
+    query = Rack::Utils.parse_query(URI.parse(last_response.headers["Location"]).query)
+    expect(query["redirect_uri"]).to eq("http://example.org/auth/example/callback?lang=en")
+    stub_token("access_token" => "token")
+    get "/auth/example/callback", {"code" => "code", "state" => query["state"]}, "rack.session" => session
+    expect(token_request_body).to include(["redirect_uri", query["redirect_uri"]])
+    expect(session).not_to have_key("omniauth.redirect_uri")
+  end
+
+  it "removes the stored redirect URI when the callback fails" do
+    session = {}
+    authorize_query(session)
+    get "/auth/example/callback", {"code" => "code", "state" => "wrong"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+    expect(session).not_to have_key("omniauth.redirect_uri")
   end
 
   context "with token params and options" do

@@ -84,6 +84,7 @@ module OmniAuth
       end
 
       def callback_phase
+        @stored_redirect_uri = session.delete("omniauth.redirect_uri")
         error = request.params["error_reason"] || request.params["error"]
         if csrf_detected?
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
@@ -134,7 +135,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        redirect_uri = session.delete("omniauth.redirect_uri") || callback_url
+        redirect_uri = @stored_redirect_uri || session.delete("omniauth.redirect_uri") || callback_url
         client.auth_code.get_token(verifier, {:redirect_uri => redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 

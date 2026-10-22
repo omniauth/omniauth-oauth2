@@ -39,7 +39,7 @@ Metrics/ClassLength:
 # callback_phase, with its three rescue clauses, is the longest method.
 Metrics/MethodLength:
   CountComments: false
-  Max: 16
+  Max: 17
 
 Metrics/ParameterLists:
   Max: 4

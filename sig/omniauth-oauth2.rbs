@@ -55,6 +55,10 @@ module OmniAuth
       # read it.
       attr_accessor access_token: ::OAuth2::AccessToken
 
+      # The redirect_uri the request phase stored, taken from the session
+      # at the start of the callback phase.
+      @stored_redirect_uri: String?
+
       def client: () -> ::OAuth2::Client
 
       def request_phase: () -> rack_response
