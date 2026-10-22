@@ -13,10 +13,10 @@ Gem::Specification.new do |gem|
   gem.homepage      = "https://github.com/omniauth/omniauth-oauth2"
   gem.licenses      = %w[MIT]
 
-  gem.executables   = `git ls-files -- bin/*`.split("\n").collect { |f| File.basename(f) }
-  gem.files         = `git ls-files`.split("\n").grep_v(%r{spec/})
+  gem.files         = Dir["lib/**/*", "sig/**/*.rbs", "LICENSE.md", "README.md", "SECURITY.md"]
   gem.name          = "omniauth-oauth2"
   gem.require_paths = %w[lib]
   gem.version       = OmniAuth::OAuth2::VERSION
+  gem.metadata["changelog_uri"] = "#{gem.homepage}/blob/master/CHANGELOG.md"
   gem.metadata["rubygems_mfa_required"] = "true"
 end
