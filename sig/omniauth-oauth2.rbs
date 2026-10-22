@@ -26,8 +26,6 @@ module OmniAuth
         def auth_token_params: () -> Strategy::Options
         def provider_ignores_state: () -> bool
         def pkce: () -> bool
-        def pkce_verifier: () -> String?
-        def pkce_verifier=: (String) -> String
         # :code_challenge, a callable that takes the verifier, and
         # :code_challenge_method
         def pkce_options: () -> Strategy::Options

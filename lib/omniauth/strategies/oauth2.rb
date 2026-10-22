@@ -30,7 +30,6 @@ module OmniAuth
       option :auth_token_params, {}
       option :provider_ignores_state, false
       option :pkce, false
-      option :pkce_verifier, nil
       option :pkce_options, {
         :code_challenge => proc { |verifier|
           Base64.urlsafe_encode64(
@@ -71,7 +70,6 @@ module OmniAuth
                         .merge(options_for("authorize"))
                         .merge(pkce_authorize_params)
 
-        session["omniauth.pkce.verifier"] = options.pkce_verifier if options.pkce
         session["omniauth.state"] = params.fetch(:state)
         # Reused in the token request, which must send the same redirect_uri.
         session["omniauth.redirect_uri"] = params[:redirect_uri] || callback_url
@@ -117,12 +115,14 @@ module OmniAuth
       def pkce_authorize_params
         return {} unless options.pkce
 
-        options.pkce_verifier = SecureRandom.hex(64)
+        # A fresh verifier for every authorization request, as RFC 7636
+        # requires: https://tools.ietf.org/html/rfc7636#section-4.1
+        verifier = SecureRandom.hex(64)
+        session["omniauth.pkce.verifier"] = verifier
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
         {
-          :code_challenge => options.pkce_options.fetch(:code_challenge)
-                                    .call(options.pkce_verifier),
+          :code_challenge => options.pkce_options.fetch(:code_challenge).call(verifier),
           :code_challenge_method => options.pkce_options.fetch(:code_challenge_method),
         }
       end

@@ -13,6 +13,12 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 - RBS type signatures for the strategy, in `sig/`, checked with Steep.
 
+### Removed
+
+- The `pkce_verifier` option. Setting it never had any effect, since the
+  strategy overwrote it with a fresh verifier on every request, and the
+  verifier is no longer kept in `options` at all. ([#184])
+
 ### Fixed
 
 - Send the token request the same `redirect_uri` as the authorize request,
@@ -139,4 +145,5 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [#152]: https://github.com/omniauth/omniauth-oauth2/pull/152
 [#169]: https://github.com/omniauth/omniauth-oauth2/pull/169
 [#174]: https://github.com/omniauth/omniauth-oauth2/pull/174
+[#184]: https://github.com/omniauth/omniauth-oauth2/pull/184
 [#189]: https://github.com/omniauth/omniauth-oauth2/issues/189

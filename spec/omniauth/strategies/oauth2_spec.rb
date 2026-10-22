@@ -120,6 +120,16 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.authorize_params[:code_challenge_method]).to eq("S256")
       expect(instance.session["omniauth.pkce.verifier"]).to be_a(String)
     end
+
+    it "uses a fresh PKCE verifier for every request, ignoring a configured one" do
+      instance = subject.new("abc", "def", :pkce => true, :pkce_verifier => "static")
+      instance.authorize_params
+      first = instance.session.fetch("omniauth.pkce.verifier")
+      instance.authorize_params
+      expect(instance.session.fetch("omniauth.pkce.verifier")).not_to eq(first)
+      expect([first, instance.session.fetch("omniauth.pkce.verifier")]).not_to include("static")
+      expect(instance.options.pkce_verifier).to eq("static")
+    end
   end
 
   describe "#token_params" do
