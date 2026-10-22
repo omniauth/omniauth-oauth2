@@ -71,34 +71,40 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.authorize_params["state"]).not_to be_empty
     end
 
-    it "includes random state in the authorize params" do
-      instance = subject.new("abc", "def")
-      expect(instance.authorize_params.keys).to eq(["state"])
-      expect(instance.session["omniauth.state"]).not_to be_empty
+    # The sign-in the request phase stored, by its state.
+    def stored_sign_ins(instance)
+      instance.session.fetch("omniauth.oauth2")
     end
 
-    it "sets the redirect URI in session" do
+    it "includes random state in the authorize params, and stores a sign-in by it" do
+      instance = subject.new("abc", "def")
+      params = instance.authorize_params
+      expect(params.keys).to eq(["state"])
+      expect(stored_sign_ins(instance).keys).to eq([params["state"]])
+    end
+
+    it "stores the redirect URI in the sign-in" do
       instance = subject.new("abc", "def")
       instance.authorize_params
-      expect(instance.session["omniauth.redirect_uri"]).not_to be_empty
+      expect(stored_sign_ins(instance).values.last["redirect_uri"]).not_to be_empty
     end
 
-    it "sets the overridden redirect_uri from :authorize_params in session" do
+    it "stores the overridden redirect_uri from :authorize_params in the sign-in" do
       instance = subject.new("abc", "def", :authorize_params => {:redirect_uri => "https://override.example/cb"})
       instance.authorize_params
-      expect(instance.session["omniauth.redirect_uri"]).to eq("https://override.example/cb")
+      expect(stored_sign_ins(instance).values.last["redirect_uri"]).to eq("https://override.example/cb")
     end
 
-    it "sets a redirect_uri given as a proc via :authorize_options in session" do
+    it "stores a redirect_uri given as a proc via :authorize_options in the sign-in" do
       instance = subject.new("abc", "def", :authorize_options => [:redirect_uri], :redirect_uri => proc { "https://proc.example/cb" })
       instance.authorize_params
-      expect(instance.session["omniauth.redirect_uri"]).to eq("https://proc.example/cb")
+      expect(stored_sign_ins(instance).values.last["redirect_uri"]).to eq("https://proc.example/cb")
     end
 
     it "includes custom state in the authorize params" do
       instance = subject.new("abc", "def", :state => proc { "qux" })
       expect(instance.authorize_params.keys).to eq(["state"])
-      expect(instance.session["omniauth.state"]).to eq("qux")
+      expect(stored_sign_ins(instance).keys).to eq(["qux"])
     end
 
     it "uses 24 random bytes for the state" do
@@ -118,16 +124,15 @@ describe OmniAuth::Strategies::OAuth2 do
       instance = subject.new("abc", "def", :pkce => true)
       expect(instance.authorize_params[:code_challenge]).to be_a(String)
       expect(instance.authorize_params[:code_challenge_method]).to eq("S256")
-      expect(instance.session["omniauth.pkce.verifier"]).to be_a(String)
+      expect(stored_sign_ins(instance).values.last["pkce_verifier"]).to be_a(String)
     end
 
     it "uses a fresh PKCE verifier for every request, ignoring a configured one" do
       instance = subject.new("abc", "def", :pkce => true, :pkce_verifier => "static")
-      instance.authorize_params
-      first = instance.session.fetch("omniauth.pkce.verifier")
-      instance.authorize_params
-      expect(instance.session.fetch("omniauth.pkce.verifier")).not_to eq(first)
-      expect([first, instance.session.fetch("omniauth.pkce.verifier")]).not_to include("static")
+      2.times { instance.authorize_params }
+      verifiers = stored_sign_ins(instance).values.collect { |sign_in| sign_in["pkce_verifier"] }
+      expect(verifiers.uniq.size).to eq(2)
+      expect(verifiers).not_to include("static")
       expect(instance.options.pkce_verifier).to eq("static")
     end
   end
@@ -145,17 +150,18 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(instance.token_params).to eq("scope" => "bar", "foo" => "baz")
     end
 
-    it "includes the PKCE code_verifier if enabled" do
+    it "includes the PKCE code_verifier of the callback's sign-in if enabled" do
       instance = subject.new("abc", "def", :pkce => true)
-      # setup session
-      instance.authorize_params
-      expect(instance.token_params[:code_verifier]).to be_a(String)
+      state = instance.authorize_params["state"]
+      instance.instance_variable_set(:@env, Rack::MockRequest.env_for("/auth/abc/callback?state=#{state}", "rack.session" => instance.session))
+      instance.instance_variable_set(:@request, nil)
+      expect(instance.token_params[:code_verifier]).to match(/\A\h{128}\z/)
     end
   end
 
   describe "#build_access_token" do
     subject { fresh_strategy }
-    let(:request_double) { double("Request", :params => {}) }
+    let(:request_double) { double("Request", :params => {"state" => "s"}) }
     let(:client_double) { double }
     let(:strategy_double) { double }
     let(:callback_url) { "http://abc.def/auth/abc/callback" }
@@ -164,7 +170,7 @@ describe OmniAuth::Strategies::OAuth2 do
       instance = subject.new("abc", "def")
 
       allow(instance).to receive(:request).and_return(request_double)
-      allow(instance).to receive(:session).and_return({"omniauth.redirect_uri" => callback_url})
+      allow(instance).to receive(:session).and_return("omniauth.oauth2" => {"s" => {"redirect_uri" => callback_url}})
       allow(instance).to receive(:client).and_return(client_double)
       allow(client_double).to receive(:auth_code).and_return(strategy_double)
 
@@ -176,7 +182,7 @@ describe OmniAuth::Strategies::OAuth2 do
 
     it "removes the stored callback_url from session once used" do
       instance = subject.new("abc", "def")
-      session = {"omniauth.redirect_uri" => callback_url}
+      session = {"omniauth.oauth2" => {"s" => {"redirect_uri" => callback_url}}}
 
       allow(instance).to receive(:request).and_return(request_double)
       allow(instance).to receive(:session).and_return(session)
@@ -186,7 +192,7 @@ describe OmniAuth::Strategies::OAuth2 do
 
       instance.send(:build_access_token)
 
-      expect(session).not_to have_key("omniauth.redirect_uri")
+      expect(session).to eq("omniauth.oauth2" => {})
     end
 
     it "falls back to the current callback_url when none is stored in session" do
@@ -209,9 +215,9 @@ describe OmniAuth::Strategies::OAuth2 do
       instance = subject.new("abc", "def")
       instance.instance_variable_set(:@env, Rack::MockRequest.env_for("http://abc.def/auth/abc?origin=home", "rack.session" => session))
       request_phase_uri = instance.callback_url
-      instance.authorize_params
+      state = instance.authorize_params["state"]
 
-      instance.instance_variable_set(:@env, Rack::MockRequest.env_for("http://abc.def/auth/abc/callback?code=c&state=s", "rack.session" => session))
+      instance.instance_variable_set(:@env, Rack::MockRequest.env_for("http://abc.def/auth/abc/callback?code=c&state=#{state}", "rack.session" => session))
       instance.instance_variable_set(:@request, nil)
       allow(instance).to receive(:client).and_return(client_double)
       allow(client_double).to receive(:auth_code).and_return(strategy_double)
@@ -234,7 +240,7 @@ describe OmniAuth::Strategies::OAuth2 do
         double("Request", :params => params)
       end
 
-      allow(instance).to receive(:session).and_return("omniauth.state" => state)
+      allow(instance).to receive(:session).and_return("omniauth.oauth2" => {state => {}})
     end
 
     it "calls fail with the error received" do
@@ -404,7 +410,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       }
     end.to_app
   end
-  let(:session) { {"omniauth.state" => "secret"} }
+  # A sign-in stored for the "secret" state, as a test sets one up.
+  let(:session) { {"omniauth.oauth2" => {"secret" => {}}} }
 
   around do |example|
     validation_phase = OmniAuth.config.request_validation_phase
@@ -432,7 +439,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     query = Rack::Utils.parse_query(location.query)
     expect(location.to_s).to start_with("https://example.com/oauth/authorize?")
     expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
-    expect(query["state"]).to eq(session["omniauth.state"])
+    expect(session["omniauth.oauth2"].keys).to eq([query["state"]])
   end
 
   it "exchanges the code for a token that doesn't expire" do
@@ -490,10 +497,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(query.keys).to contain_exactly("client_id", "response_type", "redirect_uri", "state")
     expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
     expect(query["state"]).to match(/\A\h{48}\z/)
-    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state", "omniauth.redirect_uri", "omniauth.oauth2", "omniauth.sign_ins")
+    expect(session.keys).to contain_exactly("omniauth.params", "omniauth.oauth2", "omniauth.sign_ins")
     expect(session["omniauth.sign_ins"]).to eq(query["state"] => {"origin" => nil, "params" => {}})
-    expect(session["omniauth.redirect_uri"]).to eq(query["redirect_uri"])
-    expect(session["omniauth.state"]).to eq(query["state"])
     expect(session["omniauth.oauth2"]).to eq(query["state"] => {"redirect_uri" => query["redirect_uri"]})
   end
 
@@ -517,7 +522,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     it "finishes each one with its own redirect URI and PKCE verifier, in any order" do
       session = {}
       first = start_sign_in(session, "/auth/example?tab=1")
-      first_verifier = session.fetch("omniauth.pkce.verifier")
+      first_verifier = session.fetch("omniauth.oauth2").fetch(first["state"]).fetch("pkce_verifier")
       second = start_sign_in(session, "/auth/example?tab=2")
       expect(session["omniauth.oauth2"].keys).to eq([first["state"], second["state"]])
 
@@ -526,7 +531,6 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       expect(last_request.env.values_at("omniauth.origin", "omniauth.params")).to eq([nil, {"tab" => "1"}])
       expect(token_request_body).to include(["redirect_uri", first["redirect_uri"]], ["code_verifier", first_verifier])
       expect(session["omniauth.oauth2"].keys).to eq([second["state"]])
-      expect(session.keys).not_to include("omniauth.state", "omniauth.redirect_uri", "omniauth.pkce.verifier")
 
       finish_sign_in(session, second["state"])
       expect(last_request.env["omniauth.error.type"]).to be_nil
@@ -568,7 +572,6 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     session = {}
     strategy.option :state, ->(_env) { "" }
     expect(start_sign_in(session)).to include("state" => "")
-    expect(session).to include("omniauth.state" => "")
     expect(session).not_to have_key("omniauth.oauth2")
   end
 
@@ -605,17 +608,9 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     session = {}
     state = start_sign_in(session)["state"]
     session["omniauth.oauth2"] = Class.new(Hash).new.merge!(session["omniauth.oauth2"])
-    session.delete("omniauth.state")
     stub_token("access_token" => "token")
     finish_sign_in(session, state)
     expect(last_request.env["omniauth.error.type"]).to be_nil
-  end
-
-  it "falls back to the redirect URI in omniauth.redirect_uri" do
-    stub_token("access_token" => "token")
-    session["omniauth.redirect_uri"] = "https://app.example/callback"
-    callback
-    expect(token_request_body).to include(["redirect_uri", "https://app.example/callback"])
   end
 
   context "when the provider ignores state and the callback fails" do
@@ -627,7 +622,6 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       get "/auth/example/callback", {"state" => state, "error" => "access_denied"}, "rack.session" => session
       expect(last_request.env["omniauth.error.type"]).to eq(:access_denied)
       expect(session).to include("omniauth.oauth2" => {})
-      expect(session.keys).not_to include("omniauth.state", "omniauth.redirect_uri")
     end
   end
 
@@ -637,11 +631,11 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(session["omniauth.oauth2"].keys).to eq([state])
   end
 
-  it "ignores stored sign-ins that aren't a hash in the callback" do
-    stub_token("access_token" => "token")
+  it "fails with :csrf_detected when the stored sign-ins aren't a hash, leaving them alone" do
     session["omniauth.oauth2"] = "junk"
-    callback
-    expect(last_request.env["omniauth.error.type"]).to be_nil
+    get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => session
+    expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+    expect(session["omniauth.oauth2"]).to eq("junk")
   end
 
   it "fails with :csrf_detected when the state isn't a string, even with stored sign-ins" do
@@ -675,17 +669,35 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     it "sends the S256 challenge for a 64-byte verifier it stores in the session" do
       session = {}
       query = authorize_query(session)
-      verifier = session.fetch("omniauth.pkce.verifier")
+      verifier = session.fetch("omniauth.oauth2").fetch(query["state"]).fetch("pkce_verifier")
       expect(verifier).to match(/\A\h{128}\z/)
       expect(query).to include("code_challenge" => Base64.urlsafe_encode64(Digest::SHA256.digest(verifier), :padding => false), "code_challenge_method" => "S256")
     end
 
+    it "sends no verifier when the stored sign-in has none, as a test may set one up" do
+      stub_token("access_token" => "token")
+      callback
+      expect(last_request.env["omniauth.error.type"]).to be_nil
+      expect(token_request_body.assoc("code_verifier")).to be_nil
+    end
+
+    context "when the provider ignores state" do
+      let(:options) { {:pkce => true, :provider_ignores_state => true} }
+
+      it "sends no verifier for a callback without a stored sign-in" do
+        stub_token("access_token" => "token")
+        get "/auth/example/callback", {"code" => "code"}, "rack.session" => {}
+        expect(last_request.env["omniauth.error.type"]).to be_nil
+        expect(token_request_body.assoc("code_verifier")).to be_nil
+      end
+    end
+
     it "sends the stored verifier with the token request and removes it from the session" do
       stub_token("access_token" => "token")
-      session["omniauth.pkce.verifier"] = "verifier"
+      session["omniauth.oauth2"]["secret"]["pkce_verifier"] = "verifier"
       callback
       expect(token_request_body).to include(%w[code_verifier verifier])
-      expect(session).not_to have_key("omniauth.pkce.verifier")
+      expect(session["omniauth.oauth2"]).to eq({})
     end
   end
 
@@ -695,16 +707,16 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     it "uses them for the challenge" do
       session = {}
       query = authorize_query(session)
-      expect(query).to include("code_challenge" => "challenge for #{session.fetch('omniauth.pkce.verifier')}", "code_challenge_method" => "plain")
+      verifier = session.fetch("omniauth.oauth2").fetch(query["state"]).fetch("pkce_verifier")
+      expect(query).to include("code_challenge" => "challenge for #{verifier}", "code_challenge_method" => "plain")
     end
   end
 
-  it "doesn't send or remove a PKCE verifier without PKCE" do
+  it "doesn't send a stored PKCE verifier without PKCE" do
     stub_token("access_token" => "token")
-    session["omniauth.pkce.verifier"] = "verifier"
+    session["omniauth.oauth2"]["secret"]["pkce_verifier"] = "verifier"
     callback
     expect(token_request_body.map(&:first)).not_to include("code_verifier")
-    expect(session).to include("omniauth.pkce.verifier" => "verifier")
   end
 
   it "sends exactly the grant type, code, and current callback URL when no redirect URI was stored, authenticated with the client ID and secret" do
@@ -722,7 +734,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     stub_token("access_token" => "token")
     get "/auth/example/callback", {"code" => "code", "state" => query["state"]}, "rack.session" => session
     expect(token_request_body).to include(["redirect_uri", query["redirect_uri"]])
-    expect(session).not_to have_key("omniauth.redirect_uri")
+    expect(session["omniauth.oauth2"]).to eq({})
   end
 
   context "with a redirect URI in the client options" do
@@ -769,12 +781,12 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     end
   end
 
-  it "removes the stored redirect URI when the callback fails" do
+  it "keeps the stored sign-in when the callback's state doesn't match it" do
     session = {}
-    authorize_query(session)
+    state = authorize_query(session)["state"]
     get "/auth/example/callback", {"code" => "code", "state" => "wrong"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
-    expect(session).not_to have_key("omniauth.redirect_uri")
+    expect(session["omniauth.oauth2"].keys).to eq([state])
   end
 
   context "with token params and options" do
@@ -840,9 +852,11 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
   end
 
-  it "fails with :csrf_detected when the session has no state" do
-    get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => {}
+  it "fails with :csrf_detected when the session has no state, leaving the session alone" do
+    session = {}
+    get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => session
     expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+    expect(session).to eq({})
   end
 
   it "fails with :csrf_detected when neither the callback nor the session has a state" do

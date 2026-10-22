@@ -9,6 +9,29 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking:** the `omniauth.state`, `omniauth.redirect_uri`, and
+  `omniauth.pkce.verifier` session keys. 1.10.0 stores each sign-in by its
+  state in `session["omniauth.oauth2"]` and only kept writing and reading
+  these keys for code that used them directly. A callback whose state has
+  no stored sign-in now fails with `csrf_detected`, unless the provider
+  ignores state. To set up state in a test, store a sign-in for it, with
+  its `redirect_uri` and `pkce_verifier` if the test needs them:
+
+  ```ruby
+  session["omniauth.oauth2"] = {"some-state" => {"redirect_uri" => "https://example.com/auth/example/callback"}}
+  ```
+
+  `csrf_detected?` now checks whether a sign-in is stored for the
+  callback's state, and the protected `stored_sign_in` returns that
+  sign-in, or nil. ([#196])
+
+### Fixed
+
+- Leave `code_verifier` out of the token request when no PKCE verifier is
+  stored for the callback, instead of sending it empty.
+
 ## [1.10.0] - 2026-10-22
 
 ### Added
@@ -188,3 +211,4 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [#184]: https://github.com/omniauth/omniauth-oauth2/pull/184
 [#189]: https://github.com/omniauth/omniauth-oauth2/issues/189
 [#195]: https://github.com/omniauth/omniauth-oauth2/issues/195
+[#196]: https://github.com/omniauth/omniauth-oauth2/issues/196

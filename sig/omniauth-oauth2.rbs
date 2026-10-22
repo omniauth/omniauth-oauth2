@@ -57,12 +57,17 @@ module OmniAuth
       # the oldest.
       MAX_STORED_SIGN_INS: Integer
 
-      # What the request phase stored for a sign-in: "state",
-      # "redirect_uri", and, with PKCE, "pkce_verifier"
+      # What the request phase stored for a sign-in: "redirect_uri" and,
+      # with PKCE, "pkce_verifier"
       type sign_in = Hash[String, String?]
 
-      # The sign-in the callback phase took from the session.
+      # The sign-in the callback phase took from the session, or nil if none
+      # is stored for its state.
       @stored_sign_in: sign_in?
+
+      # The PKCE verifier the request phase made, until it's stored with the
+      # sign-in.
+      @pkce_verifier: String?
 
       def client: () -> ::OAuth2::Client
 
@@ -80,16 +85,16 @@ module OmniAuth
       # These are protected in Ruby, which RBS has no way to say.
       private
 
-      # Whether the callback's state is missing or doesn't match the one the
-      # request phase stored, unless the provider ignores state.
+      # Whether no sign-in is stored for the callback's state, unless the
+      # provider ignores state.
       def csrf_detected?: () -> bool
 
       # Stores the redirect URI and PKCE verifier of a sign-in by its state.
       def store_sign_in: (String state, String redirect_uri) -> void
 
       # What the request phase stored for the callback's state, removed from
-      # the session, or else the latest sign-in's state and redirect URI.
-      def stored_sign_in: () -> sign_in
+      # the session, or nil if no sign-in is stored for it.
+      def stored_sign_in: () -> sign_in?
 
       # The sign-ins in progress, by state, oldest first.
       def stored_sign_ins: () -> Hash[String, sign_in]

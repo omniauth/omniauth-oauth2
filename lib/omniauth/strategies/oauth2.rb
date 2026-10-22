@@ -84,8 +84,6 @@ module OmniAuth
         # oauth2 gives a client_options redirect_uri precedence in the
         # authorize URL, so it does here too.
         redirect_uri = client.options[:redirect_uri] || params[:redirect_uri] || callback_url
-        session["omniauth.state"] = state
-        session["omniauth.redirect_uri"] = redirect_uri
         store_sign_in(state.to_s, redirect_uri)
         # Lets OmniAuth give the callback this sign-in's origin and params.
         remember_sign_in(state.to_s)
@@ -125,13 +123,12 @@ module OmniAuth
 
     protected
 
-      # Whether the callback's state is missing or doesn't match the one the
-      # request phase stored, unless the provider ignores state.
+      # Whether no sign-in is stored for the callback's state, unless the
+      # provider ignores state.
       def csrf_detected?
         return false if options.provider_ignores_state
 
-        state = request.params["state"].to_s
-        state.empty? || !secure_compare(state, stored_sign_in.fetch("state").to_s)
+        stored_sign_in.nil?
       end
 
       # Stores the state, redirect URI, and PKCE verifier of a sign-in by its
@@ -139,8 +136,8 @@ module OmniAuth
       def store_sign_in(state, redirect_uri)
         return if state.empty?
 
-        sign_in = {"redirect_uri" => redirect_uri}
-        sign_in["pkce_verifier"] = session.fetch("omniauth.pkce.verifier") if options.pkce
+        sign_in = {"redirect_uri" => redirect_uri} #: sign_in
+        sign_in["pkce_verifier"] = @pkce_verifier if options.pkce
         sign_ins = stored_sign_ins
         sign_ins.delete(state)
         sign_ins[state] = sign_in
@@ -148,23 +145,16 @@ module OmniAuth
       end
 
       # What the request phase stored for this callback's state, removed from
-      # the session. Without a stored sign-in for the state, it comes from the
-      # omniauth.state and omniauth.redirect_uri keys, which hold the latest
-      # sign-in and which provider gems and tests set directly.
+      # the session, or nil if no sign-in is stored for it.
       def stored_sign_in
-        @stored_sign_in ||= begin
-          fallback = {"state" => session.delete("omniauth.state"), "redirect_uri" => session.delete("omniauth.redirect_uri")}
-          state = request.params["state"]
-          sign_ins = stored_sign_ins
-          key = sign_ins.keys.detect { |stored| secure_compare(stored, state) } if state.instance_of?(String)
-          sign_in = sign_ins.delete(key)
-          if sign_in
-            session["omniauth.oauth2"] = sign_ins
-            sign_in.merge("state" => key)
-          else
-            fallback
-          end
-        end
+        return @stored_sign_in if instance_variable_defined?(:@stored_sign_in)
+
+        state = request.params["state"]
+        sign_ins = stored_sign_ins
+        key = sign_ins.keys.detect { |stored| secure_compare(stored, state) } if state.instance_of?(String)
+        sign_in = sign_ins.delete(key)
+        session["omniauth.oauth2"] = sign_ins if sign_in
+        @stored_sign_in = sign_in
       end
 
       # A copy of the stored sign-ins, which are changed by assigning the
@@ -179,8 +169,7 @@ module OmniAuth
 
         # A fresh verifier for every authorization request, as RFC 7636
         # requires: https://tools.ietf.org/html/rfc7636#section-4.1
-        verifier = SecureRandom.hex(64)
-        session["omniauth.pkce.verifier"] = verifier
+        verifier = @pkce_verifier = SecureRandom.hex(64)
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
         {
@@ -192,8 +181,8 @@ module OmniAuth
       def pkce_token_params
         return {} unless options.pkce
 
-        verifier = session.delete("omniauth.pkce.verifier")
-        {:code_verifier => stored_sign_in.fetch("pkce_verifier", verifier)}
+        verifier = stored_sign_in.to_h["pkce_verifier"]
+        verifier ? {:code_verifier => verifier} : {}
       end
 
       # The access token from the callback's code, refreshed if it's already
@@ -205,7 +194,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        redirect_uri = stored_sign_in.fetch("redirect_uri") || callback_url
+        redirect_uri = stored_sign_in.to_h["redirect_uri"] || callback_url
         client.auth_code.get_token(verifier, {:redirect_uri => redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
