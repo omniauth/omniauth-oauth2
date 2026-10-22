@@ -26,6 +26,9 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
   RFC 6749 requires. ([#93], [#142])
 - Send the token request a `redirect_uri` set in `client_options`, which
   oauth2 already sends in the authorize request. ([#161])
+- Fail with `invalid_credentials` instead of raising `NoMethodError` when
+  oauth2's `raise_errors` is off and the token response has no token.
+  ([#138])
 - Fail with `csrf_detected` instead of raising `NoMethodError` when the
   session has no stored state or the `state` param isn't a string. ([#189])
 
@@ -142,6 +145,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [1.0.0.pr1]: https://github.com/omniauth/omniauth-oauth2/releases/tag/v1.0.0.pr1
 
 [#93]: https://github.com/omniauth/omniauth-oauth2/issues/93
+[#138]: https://github.com/omniauth/omniauth-oauth2/issues/138
 [#142]: https://github.com/omniauth/omniauth-oauth2/pull/142
 [#146]: https://github.com/omniauth/omniauth-oauth2/pull/146
 [#152]: https://github.com/omniauth/omniauth-oauth2/pull/152

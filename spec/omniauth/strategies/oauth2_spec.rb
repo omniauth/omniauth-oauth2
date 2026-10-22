@@ -382,7 +382,7 @@ end
 
 # Mutant runs a method's mutations against the specs that describe that
 # method, so list the methods these end-to-end specs exercise.
-FLOW_METHODS = %w[client request_phase authorize_params token_params callback_phase csrf_detected? pkce_authorize_params pkce_token_params build_access_token deep_symbolize options_for secure_compare].freeze
+FLOW_METHODS = %w[client request_phase authorize_params token_params callback_phase csrf_detected? pkce_authorize_params pkce_token_params fetch_access_token build_access_token deep_symbolize options_for secure_compare].freeze
 
 describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression => FLOW_METHODS.map { |name| "OmniAuth::Strategies::OAuth2##{name}" } do
   let(:strategy) do
@@ -577,6 +577,17 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       get "/auth/example/callback", {"code" => "code", "state" => query["state"]}, "rack.session" => session
       expect(token_request_body).to include(["redirect_uri", "https://app.example/callback"])
       expect(token_request_body.count { |key, _| key == "redirect_uri" }).to eq(1)
+    end
+  end
+
+  context "when oauth2 doesn't raise errors" do
+    let(:options) { {:client_options => {:raise_errors => false}} }
+
+    it "fails with :invalid_credentials when the token response has no token" do
+      stub_request(:post, "https://example.com/oauth/token").to_return(:status => 200, :body => "", :headers => {"Content-Type" => "application/json"})
+      get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => session
+      expect(last_request.env["omniauth.error.type"]).to eq(:invalid_credentials)
+      expect([callback_error.error, callback_error.error_reason]).to eq([:invalid_credentials, "No access token"])
     end
   end
 

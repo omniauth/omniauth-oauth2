@@ -78,7 +78,11 @@ module OmniAuth
 
       def pkce_token_params: () -> Hash[Symbol, String?]
 
-      def build_access_token: () -> ::OAuth2::AccessToken
+      def fetch_access_token: () -> ::OAuth2::AccessToken
+
+      # Nil when oauth2's raise_errors is off and the token response has no
+      # token.
+      def build_access_token: () -> ::OAuth2::AccessToken?
 
       def deep_symbolize: (Hash[untyped, untyped] options) -> Hash[Symbol, untyped]
 

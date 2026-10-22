@@ -91,8 +91,7 @@ module OmniAuth
         elsif error
           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
         else
-          self.access_token = build_access_token
-          self.access_token = access_token.refresh! if access_token.expired?
+          self.access_token = fetch_access_token
           super
         end
       rescue ::OAuth2::Error, CallbackError => e
@@ -133,6 +132,13 @@ module OmniAuth
         return {} unless options.pkce
 
         {:code_verifier => session.delete("omniauth.pkce.verifier")}
+      end
+
+      # The access token from the callback's code, refreshed if it's already
+      # expired.
+      def fetch_access_token
+        token = build_access_token || raise(CallbackError.new(:invalid_credentials, "No access token"))
+        token.expired? ? token.refresh! : token
       end
 
       def build_access_token
