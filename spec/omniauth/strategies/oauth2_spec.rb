@@ -566,6 +566,20 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(session).not_to have_key("omniauth.redirect_uri")
   end
 
+  context "with a redirect URI in the client options" do
+    let(:options) { {:client_options => {:redirect_uri => "https://app.example/callback"}, :authorize_params => {:redirect_uri => "https://override.example/callback"}} }
+
+    it "sends it in both the authorize and token requests, even over an authorize param" do
+      session = {}
+      query = authorize_query(session)
+      expect(query["redirect_uri"]).to eq("https://app.example/callback")
+      stub_token("access_token" => "token")
+      get "/auth/example/callback", {"code" => "code", "state" => query["state"]}, "rack.session" => session
+      expect(token_request_body).to include(["redirect_uri", "https://app.example/callback"])
+      expect(token_request_body.count { |key, _| key == "redirect_uri" }).to eq(1)
+    end
+  end
+
   it "removes the stored redirect URI when the callback fails" do
     session = {}
     authorize_query(session)

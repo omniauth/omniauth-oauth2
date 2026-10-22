@@ -24,6 +24,8 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 - Send the token request the same `redirect_uri` as the authorize request,
   instead of the callback URL with `code` and `state` appended, as
   RFC 6749 requires. ([#93], [#142])
+- Send the token request a `redirect_uri` set in `client_options`, which
+  oauth2 already sends in the authorize request. ([#161])
 - Fail with `csrf_detected` instead of raising `NoMethodError` when the
   session has no stored state or the `state` param isn't a string. ([#189])
 
@@ -143,6 +145,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [#142]: https://github.com/omniauth/omniauth-oauth2/pull/142
 [#146]: https://github.com/omniauth/omniauth-oauth2/pull/146
 [#152]: https://github.com/omniauth/omniauth-oauth2/pull/152
+[#161]: https://github.com/omniauth/omniauth-oauth2/issues/161
 [#169]: https://github.com/omniauth/omniauth-oauth2/pull/169
 [#174]: https://github.com/omniauth/omniauth-oauth2/pull/174
 [#184]: https://github.com/omniauth/omniauth-oauth2/pull/184

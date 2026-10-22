@@ -72,7 +72,9 @@ module OmniAuth
 
         session["omniauth.state"] = params.fetch(:state)
         # Reused in the token request, which must send the same redirect_uri.
-        session["omniauth.redirect_uri"] = params[:redirect_uri] || callback_url
+        # oauth2 gives a client_options redirect_uri precedence in the
+        # authorize URL, so it does here too.
+        session["omniauth.redirect_uri"] = client.options[:redirect_uri] || params[:redirect_uri] || callback_url
 
         params
       end
