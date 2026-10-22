@@ -19,6 +19,9 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
   returns one, not only when the access token expires. Some providers,
   like Twitch, issue expiring tokens without saying when they expire.
   ([#122])
+- Fail the request phase with `missing_client_id` when no client ID is
+  configured, instead of redirecting to the provider with an authorize
+  request it can only reject. ([#65])
 
 ### Removed
 
@@ -151,6 +154,7 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 [1.0.0.pr2]: https://github.com/omniauth/omniauth-oauth2/compare/v1.0.0.pr1...v1.0.0.pr2
 [1.0.0.pr1]: https://github.com/omniauth/omniauth-oauth2/releases/tag/v1.0.0.pr1
 
+[#65]: https://github.com/omniauth/omniauth-oauth2/issues/65
 [#93]: https://github.com/omniauth/omniauth-oauth2/issues/93
 [#122]: https://github.com/omniauth/omniauth-oauth2/issues/122
 [#138]: https://github.com/omniauth/omniauth-oauth2/issues/138

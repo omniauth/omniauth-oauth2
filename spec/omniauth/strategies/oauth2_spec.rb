@@ -40,7 +40,7 @@ describe OmniAuth::Strategies::OAuth2 do
   end
 
   describe "#request_phase" do
-    subject(:instance) { fresh_strategy.new(app, :client_options => {"authorize_url" => "https://example.com/authorize"}) }
+    subject(:instance) { fresh_strategy.new(app, "abc", "def", :client_options => {"authorize_url" => "https://example.com/authorize"}) }
 
     before do
       allow(instance).to receive(:request) do
@@ -593,6 +593,25 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       get "/auth/example/callback", {"code" => "code", "state" => "secret"}, "rack.session" => session
       expect(last_request.env["omniauth.error.type"]).to eq(:invalid_credentials)
       expect([callback_error.error, callback_error.error_reason]).to eq([:invalid_credentials, "No access token"])
+    end
+  end
+
+  context "without a client ID" do
+    let(:app) do
+      strategy_class = strategy
+      Rack::Builder.new do
+        use OmniAuth::Test::PhonySession
+        use strategy_class, nil, "def"
+        run ->(_env) { [200, {}, ["app"]] }
+      end.to_app
+    end
+
+    it "fails the request phase with :missing_client_id instead of redirecting to the provider" do
+      post "/auth/example", {}, "rack.session" => {}
+      expect(last_request.env["omniauth.error.type"]).to eq(:missing_client_id)
+      expect(last_request.env["omniauth.error"]).to be_a(OmniAuth::Error)
+      expect(last_request.env["omniauth.error"].message).to eq("client_id is missing")
+      expect(last_response.headers["Location"]).to start_with("/auth/failure?message=missing_client_id")
     end
   end
 

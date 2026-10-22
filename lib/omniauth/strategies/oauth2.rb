@@ -55,6 +55,10 @@ module OmniAuth
       end
 
       def request_phase
+        # The provider can't do anything with an authorize request that has no
+        # client ID, so fail here, where the cause is clear.
+        return fail!(:missing_client_id, Error.new("client_id is missing")) if client.id.to_s.empty?
+
         redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
       end
 
