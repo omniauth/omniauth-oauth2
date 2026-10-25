@@ -4,6 +4,7 @@
 [![Ruby](https://github.com/omniauth/omniauth-oauth2/actions/workflows/main.yml/badge.svg)][githubactions]
 [![Maintainability](https://qlty.sh/gh/omniauth/projects/omniauth-oauth2/maintainability.svg)][qlty]
 [![Coverage Status](http://img.shields.io/coveralls/omniauth/omniauth-oauth2.svg)][coveralls]
+[![Duel](https://raw.githubusercontent.com/sferik/duel-ruby/main/assets/badge.svg)](https://github.com/sferik/duel-ruby)
 
 [gem]: https://rubygems.org/gems/omniauth-oauth2
 [githubactions]: https://github.com/omniauth/omniauth-oauth2/actions/workflows/main.yml

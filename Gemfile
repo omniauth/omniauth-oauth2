@@ -27,5 +27,11 @@ group :test do
   gem "webmock", "~> 3.0"
 end
 
+group :development do
+  # Duel requires Ruby 3.4 or later
+  gem "duel" if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.4")
+  gem "stackprof", :platforms => :mri
+end
+
 # Specify your gem's dependencies in omniauth-oauth2.gemspec
 gemspec
