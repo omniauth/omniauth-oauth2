@@ -10,7 +10,6 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,22 +21,33 @@ jobs:
           ruby: 2.5
     steps:
     - uses: actions/checkout@v7
-    - name: Set up Ruby
+    - id: ruby
+      name: Set up Ruby
+      continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true
-    - name: Set JRUBY_OPTS environment variable
+    - id: set-jruby-opts
+      name: Set JRUBY_OPTS environment variable
+      continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
       run: echo "JRUBY_OPTS=--debug" >> "$GITHUB_ENV"
       if: ${{ startsWith(matrix.ruby, 'jruby') }}
-    - name: Run tests
+    - id: tests
+      name: Run tests
+      continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
       run: bundle exec rake spec rubocop steep
-    - uses: actions/upload-artifact@v7
+    - id: upload-artifact
+      uses: actions/upload-artifact@v7
+      continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.ruby == '4.0' }}
       with:
         name: coverage
         path: coverage/
         retention-days: 1
+    - name: Note an advisory failure
+      if: steps.ruby.outcome == 'failure' || steps.set-jruby-opts.outcome == 'failure' || steps.tests.outcome == 'failure' || steps.upload-artifact.outcome == 'failure'
+      run: echo "::warning title=Advisory failure::A step failed, but this job is allowed to fail, so the build still passes"
 
   mutant:
     runs-on: ubuntu-latest
