@@ -19,6 +19,30 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
   the `error_reason:` keyword. `CallbackError#message` includes all four.
   ([#69])
 
+### Security
+
+- Require oauth2 2.0.26 or later. The previous floor, 2.0.2, admitted
+  every 2.0.x release, including 2.0.2-2.0.21
+  ([CVE-2026-54603](https://github.com/advisories/GHSA-pp92-crg2-gfv9),
+  a high-severity bearer-token disclosure on cross-origin redirects in
+  `OAuth2::Client#request`, the code every token exchange goes through)
+  and 2.0.19-2.0.25
+  ([GHSA-cmh8-5q25-68v6](https://github.com/ruby-oauth/oauth2/security/advisories/GHSA-cmh8-5q25-68v6),
+  cleartext secret logging under `OAUTH_DEBUG`). 2.0.26 is the first
+  release outside both affected ranges, so the 2.0.x line stays usable;
+  2.1 is also allowed.
+
+  [GHSA-h4fh-g8xf-8255](https://github.com/ruby-oauth/oauth2/security/advisories/GHSA-h4fh-g8xf-8255)
+  (critical, cross-origin redirects from the token endpoint) lists
+  every release from 2.0.22 up to 2.1.0 as affected, 2.0.26 included,
+  and is fully fixed only in 2.1.0. 2.0.26 already strips the
+  `Authorization` header, request body, and query parameters from a
+  cross-origin redirect, so the client secret, authorization code, and
+  PKCE verifier aren't sent on. It still follows the redirect, though,
+  and takes the response as the token. 2.1.0 refuses such redirects
+  instead. Applications that can resolve oauth2 2.1 should require it
+  in their own Gemfile.
+
 ### Removed
 
 - **Breaking:** the `omniauth.state`, `omniauth.redirect_uri`, and

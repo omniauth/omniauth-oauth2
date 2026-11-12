@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "omniauth-oauth2/version"
 
 Gem::Specification.new do |gem|
-  gem.add_dependency "oauth2", [">= 2.0.2", "< 3"]
+  gem.add_dependency "oauth2", [">= 2.0.26", "< 3"]
   gem.add_dependency "omniauth", "~> 2.3", ">= 2.3.1"
 
   gem.authors       = ["Erik Berlin", "Michael Bleigh", "Tom Milewski"]
