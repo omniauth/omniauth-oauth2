@@ -75,6 +75,8 @@ module OmniAuth
           test_env["rack.session"] ||= {}
         end
 
+        warn_if_state_is_fixed
+
         params = options.authorize_params
                         .merge(options_for("authorize"))
                         .merge(pkce_authorize_params)
@@ -129,6 +131,13 @@ module OmniAuth
         return false if options.provider_ignores_state
 
         stored_sign_in.nil?
+      end
+
+      def warn_if_state_is_fixed
+        state = options[:state]
+        return unless state && !state.respond_to?(:call) && options.authorize_options.map(&:to_s).include?("state")
+
+        log :warn, "The :state option is a fixed value, so every sign-in has the same state and the callback can't detect CSRF. Set :state to a proc that returns an unguessable value for each request, or leave it unset."
       end
 
       # Stores the state, redirect URI, and PKCE verifier of a sign-in by its

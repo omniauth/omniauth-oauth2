@@ -9,6 +9,12 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+### Added
+
+- Log a warning when the `:state` option is a fixed value rather than a
+  proc. A fixed state is the same for every sign-in, so the callback
+  can't detect CSRF. The fixed state is still used, as before.
+
 ### Changed
 
 - **Breaking:** `CallbackError#error_reason` is now only the provider's

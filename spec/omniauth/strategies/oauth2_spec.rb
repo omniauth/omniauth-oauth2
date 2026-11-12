@@ -107,6 +107,14 @@ describe OmniAuth::Strategies::OAuth2 do
       expect(stored_sign_ins(instance).keys).to eq(["qux"])
     end
 
+    it "warns that a fixed state can't detect CSRF, and still uses it" do
+      log = StringIO.new
+      allow(OmniAuth).to receive(:logger).and_return(Logger.new(log))
+      instance = subject.new("abc", "def", :state => "qux")
+      expect(instance.authorize_params["state"]).to eq("qux")
+      expect(log.string).to include("WARN -- : (#{instance.name}) The :state option is a fixed value")
+    end
+
     it "uses 24 random bytes for the state" do
       instance = subject.new("abc", "def")
       expect(instance.authorize_params["state"]).to match(/\A\h{48}\z/)
@@ -348,6 +356,30 @@ describe OmniAuth::Strategies::OAuth2 do
     end
   end
 
+  describe "#warn_if_state_is_fixed" do
+    let(:log) { StringIO.new }
+
+    before do
+      allow(OmniAuth).to receive(:logger).and_return(Logger.new(log))
+    end
+
+    it "warns that a fixed :state can't detect CSRF, whether :state is listed as a symbol or a string" do
+      [{}, {:authorize_options => ["state"]}].each do |options|
+        log.reopen("")
+        instance = fresh_strategy.new("abc", "def", options.merge(:state => "qux"))
+        instance.send(:warn_if_state_is_fixed)
+        expect(log.string).to end_with("WARN -- : (#{instance.name}) The :state option is a fixed value, so every sign-in has the same state and the callback can't detect CSRF. Set :state to a proc that returns an unguessable value for each request, or leave it unset.\n")
+      end
+    end
+
+    it "doesn't warn about a state given as a proc, a state left unset, or a state that isn't an authorize option" do
+      fresh_strategy.new("abc", "def", :state => proc { "qux" }).send(:warn_if_state_is_fixed)
+      fresh_strategy.new("abc", "def").send(:warn_if_state_is_fixed)
+      fresh_strategy.new("abc", "def", :authorize_options => [:scope], :state => "qux").send(:warn_if_state_is_fixed)
+      expect(log.string).to be_empty
+    end
+  end
+
   describe "#options_for" do
     it "returns the set options, with symbol keys, calling any that are callable with the env" do
       instance = fresh_strategy.new("abc", "def", :authorize_options => ["scope", :prompt, :login_hint], :scope => "email", :prompt => ->(env) { env.fetch("prompt") }, :login_hint => nil)
@@ -388,7 +420,7 @@ end
 
 # Mutant runs a method's mutations against the specs that describe that
 # method, so list the methods these end-to-end specs exercise.
-FLOW_METHODS = %w[client request_phase authorize_params callback_sign_in_key token_params callback_phase csrf_detected? store_sign_in stored_sign_in stored_sign_ins pkce_authorize_params pkce_token_params fetch_access_token build_access_token deep_symbolize options_for secure_compare].freeze
+FLOW_METHODS = %w[client request_phase authorize_params callback_sign_in_key token_params callback_phase csrf_detected? warn_if_state_is_fixed store_sign_in stored_sign_in stored_sign_ins pkce_authorize_params pkce_token_params fetch_access_token build_access_token deep_symbolize options_for secure_compare].freeze
 
 describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression => FLOW_METHODS.map { |name| "OmniAuth::Strategies::OAuth2##{name}" } do
   let(:strategy) do
@@ -662,6 +694,19 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       query = authorize_query
       expect(query).to include("scope" => "email", "prompt" => "/auth/example", "access_type" => "offline")
       expect(query).not_to have_key("login_hint")
+    end
+  end
+
+  context "with a fixed state" do
+    let(:options) { {:state => "fixed"} }
+
+    it "still sends and stores the fixed state, and warns that it can't detect CSRF" do
+      log = StringIO.new
+      allow(OmniAuth).to receive(:logger).and_return(Logger.new(log))
+      session = {}
+      expect(authorize_query(session)).to include("state" => "fixed")
+      expect(session["omniauth.oauth2"].keys).to eq(["fixed"])
+      expect(log.string).to include("WARN -- : (example) The :state option is a fixed value")
     end
   end
 
