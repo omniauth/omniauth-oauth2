@@ -67,6 +67,12 @@ end
 
 That's pretty much it!
 
+The strategy sends a random `state` with each sign-in and checks it in the
+callback to detect CSRF, so leave the `state` option unset. If you must set
+it, use a proc that returns an unguessable value for each request. A fixed
+value is the same for every sign-in, so the callback can't detect CSRF, and
+the strategy logs a warning.
+
 ## Supported Ruby Versions
 
 OmniAuth OAuth2 is tested on Ruby 2.5 through 4.0, JRuby, and TruffleRuby,

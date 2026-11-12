@@ -89,6 +89,8 @@ module OmniAuth
       # provider ignores state.
       def csrf_detected?: () -> bool
 
+      def warn_if_state_is_fixed: () -> void
+
       # Stores the redirect URI and PKCE verifier of a sign-in by its state.
       def store_sign_in: (String state, String redirect_uri) -> void
 
