@@ -18,19 +18,34 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
   argument to `CallbackError.new` is the description, and the reason is
   the `error_reason:` keyword. `CallbackError#message` includes all four.
   ([#69])
+- **Breaking:** each sign-in is stored in OmniAuth's
+  `session["omniauth.sign_ins"]`, with its origin and params, instead of
+  in a second map, `session["omniauth.oauth2"]`, that stored its state
+  again. That map, its cap of 5, and the `MAX_STORED_SIGN_INS` constant
+  are gone. OmniAuth keeps the latest 3 sign-ins
+  (`OmniAuth::Strategy::SignIns::MAX_REMEMBERED_SIGN_INS`). Requires
+  OmniAuth 2.4. ([#195])
+- Each sign-in stores less, so abandoned ones no longer overflow Rails'
+  4 KB cookie session with `ActionDispatch::Cookies::CookieOverflow`. It
+  leaves out the redirect URI when it's the callback URL without a query
+  string, which the token request then sends. The PKCE verifier is 32
+  random bytes in base64url, 43 characters, the shortest RFC 7636 allows,
+  instead of 128 hex characters. Three sign-ins with PKCE and an origin
+  now add about 1 KB to an encrypted Rails session cookie, where five in
+  1.10.0 added about 4.6 KB. ([#195])
 
 ### Removed
 
 - **Breaking:** the `omniauth.state`, `omniauth.redirect_uri`, and
   `omniauth.pkce.verifier` session keys. 1.10.0 stores each sign-in by its
-  state in `session["omniauth.oauth2"]` and only kept writing and reading
-  these keys for code that used them directly. A callback whose state has
-  no stored sign-in now fails with `csrf_detected`, unless the provider
-  ignores state. To set up state in a test, store a sign-in for it, with
-  its `redirect_uri` and `pkce_verifier` if the test needs them:
+  state and only kept writing and reading these keys for code that used
+  them directly. A callback whose state has no stored sign-in now fails
+  with `csrf_detected`, unless the provider ignores state. To set up state
+  in a test, store a sign-in for it, with its `redirect_uri` and
+  `pkce_verifier` if the test needs them:
 
   ```ruby
-  session["omniauth.oauth2"] = {"some-state" => {"redirect_uri" => "https://example.com/auth/example/callback"}}
+  session["omniauth.sign_ins"] = {"some-state" => {"redirect_uri" => "https://example.com/auth/example/callback"}}
   ```
 
   `csrf_detected?` now checks whether a sign-in is stored for the

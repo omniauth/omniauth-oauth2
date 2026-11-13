@@ -18,11 +18,6 @@ module OmniAuth
         Strategy.included(subclass)
       end
 
-      # How many sign-ins can be in progress at once, for example in several
-      # tabs. Starting another drops the oldest. Each one adds about 300
-      # bytes to the session, which may be a 4 KB cookie.
-      MAX_STORED_SIGN_INS = 5
-
       args %i[client_id client_secret]
 
       option :client_id, nil
@@ -84,15 +79,15 @@ module OmniAuth
         # oauth2 gives a client_options redirect_uri precedence in the
         # authorize URL, so it does here too.
         redirect_uri = client.options[:redirect_uri] || params[:redirect_uri] || callback_url
-        store_sign_in(state.to_s, redirect_uri)
-        # Lets OmniAuth give the callback this sign-in's origin and params.
-        remember_sign_in(state.to_s)
+        # OmniAuth stores this with the sign-in's origin and params, so the
+        # callback gets all of them for its state.
+        remember_sign_in(state.to_s, sign_in_data(redirect_uri))
 
         params
       end
 
       # The state the provider sends back, which OmniAuth uses to find the
-      # origin and params that remember_sign_in stored.
+      # sign-in that remember_sign_in stored.
       def callback_sign_in_key
         request.params["state"]
       end
@@ -131,45 +126,47 @@ module OmniAuth
         stored_sign_in.nil?
       end
 
-      # Stores the state, redirect URI, and PKCE verifier of a sign-in by its
-      # state, so several can be in progress at once.
-      def store_sign_in(state, redirect_uri)
-        return if state.empty?
-
-        sign_in = {"redirect_uri" => redirect_uri} #: sign_in
-        sign_in["pkce_verifier"] = @pkce_verifier if options.pkce
-        sign_ins = stored_sign_ins
-        sign_ins.delete(state)
-        sign_ins[state] = sign_in
-        session["omniauth.oauth2"] = sign_ins.to_a.last(MAX_STORED_SIGN_INS).to_h
+      # What the callback needs from the request phase besides OmniAuth's
+      # origin and params: the redirect URI, unless it's the callback URL
+      # without a query string, and the PKCE verifier. The session may be a
+      # 4 KB cookie, so it stores no more than that.
+      def sign_in_data(redirect_uri)
+        data = {} #: sign_in
+        data["redirect_uri"] = redirect_uri unless redirect_uri.eql?(callback_url_without_query)
+        data["pkce_verifier"] = @pkce_verifier if options.pkce
+        data
       end
 
       # What the request phase stored for this callback's state, removed from
-      # the session, or nil if no sign-in is stored for it.
+      # the session, or nil if no sign-in is stored for it. OmniAuth keeps
+      # it, with the sign-in's "origin" and "params".
       def stored_sign_in
-        return @stored_sign_in if instance_variable_defined?(:@stored_sign_in)
-
-        state = request.params["state"]
-        sign_ins = stored_sign_ins
-        key = sign_ins.keys.detect { |stored| secure_compare(stored, state) } if state.instance_of?(String)
-        sign_in = sign_ins.delete(key)
-        session["omniauth.oauth2"] = sign_ins if sign_in
-        @stored_sign_in = sign_in
+        remembered_sign_in
       end
 
-      # A copy of the stored sign-ins, which are changed by assigning the
-      # session key, not in place.
-      def stored_sign_ins
-        sign_ins = session["omniauth.oauth2"]
-        sign_ins.is_a?(Hash) ? sign_ins.dup : {}
+      # The redirect URI the authorize request sent, which the token request
+      # must send too.
+      def stored_redirect_uri
+        sign_in = stored_sign_in
+        return callback_url unless sign_in
+
+        sign_in.fetch("redirect_uri") { callback_url_without_query }
+      end
+
+      # The callback URL without the current request's query string, the
+      # same in the request and callback phases.
+      def callback_url_without_query
+        full_host + callback_path
       end
 
       def pkce_authorize_params
         return {} unless options.pkce
 
         # A fresh verifier for every authorization request, as RFC 7636
-        # requires: https://tools.ietf.org/html/rfc7636#section-4.1
-        verifier = @pkce_verifier = SecureRandom.hex(64)
+        # requires: https://tools.ietf.org/html/rfc7636#section-4.1. Its 32
+        # random bytes encode to 43 characters, the shortest it allows,
+        # which keeps the session small.
+        verifier = @pkce_verifier = SecureRandom.urlsafe_base64(32)
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
         {
@@ -194,8 +191,7 @@ module OmniAuth
 
       def build_access_token
         verifier = request.params["code"]
-        redirect_uri = stored_sign_in.to_h["redirect_uri"] || callback_url
-        client.auth_code.get_token(verifier, {:redirect_uri => redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
+        client.auth_code.get_token(verifier, {:redirect_uri => stored_redirect_uri}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
       end
 
       def deep_symbolize(options)
