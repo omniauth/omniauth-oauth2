@@ -9,6 +9,8 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-11-14
+
 ### Fixed
 
 - Keep at most 3 sign-ins in progress instead of 5, and make the PKCE
@@ -158,7 +160,8 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [1.0.0.pr1] - 2011-10-13
 
-[Unreleased]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.7.2...v1.8.0
