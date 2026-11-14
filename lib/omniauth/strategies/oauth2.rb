@@ -97,8 +97,6 @@ module OmniAuth
       end
 
       def callback_phase
-        # Take what the request phase stored, even if the callback fails.
-        stored_sign_in
         error = request.params["error_reason"] || request.params["error"]
         if csrf_detected?
           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
