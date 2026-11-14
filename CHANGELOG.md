@@ -57,6 +57,19 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 - Leave `code_verifier` out of the token request when no PKCE verifier is
   stored for the callback, instead of sending it empty.
 
+## [1.10.1] - 2026-11-14
+
+### Fixed
+
+- Keep at most 3 sign-ins in progress instead of 5, and make the PKCE
+  verifier 32 random bytes in base64url, 43 characters, the shortest
+  RFC 7636 allows, instead of 128 hex characters. With PKCE, about 4
+  abandoned sign-ins overflowed Rails' 4 KB cookie session, and the next
+  sign-in failed with `ActionDispatch::Cookies::CookieOverflow`. Three
+  sign-ins with an origin now take about 2.8 KB of an encrypted Rails
+  session cookie, where five took about 5 KB.
+  ([#195](https://github.com/omniauth/omniauth-oauth2/issues/195#issuecomment-6850392670))
+
 ## [1.10.0] - 2026-10-22
 
 ### Added
@@ -195,7 +208,8 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [1.0.0.pr1] - 2011-10-13
 
-[Unreleased]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/omniauth/omniauth-oauth2/compare/v1.10.0...v1.10.1
 [1.10.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/omniauth/omniauth-oauth2/compare/v1.7.2...v1.8.0
