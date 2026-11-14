@@ -28,12 +28,12 @@ duel "callback: exchange the code with PKCE" do |n|
   envs.each { |env| @app.call(env) }
 end
 
-# As many sign-ins in progress as the session keeps, with the callback's
-# the newest, so finding it compares every state.
+# As many sign-ins in progress as OmniAuth keeps, with the callback's the
+# newest, so finding it compares every state.
 duel "callback: with the most sign-ins in progress" do |n|
   once do
     @app = build_app
-    stored = states(OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS)
+    stored = states(MOST_SIGN_INS)
     @env = callback_env(stored.last)
     @session = session_with_sign_ins(stored)
   end

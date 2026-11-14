@@ -62,6 +62,10 @@ TOKEN_RESPONSE = JSON.generate(
 CLIENT_SITE = "https://provider.example.com".freeze
 REDIRECT_URI = "https://app.example.com/auth/example/callback".freeze
 
+# The most sign-ins OmniAuth 2.4 keeps in progress. It's a number here,
+# not a constant of either version, so both get the same work.
+MOST_SIGN_INS = 3
+
 # The token endpoint, answered in process by Faraday's test adapter.
 TOKEN_STUBS = Faraday::Adapter::Test::Stubs.new do |stub|
   stub.post("/oauth/token") do
@@ -95,15 +99,20 @@ def states(count)
 end
 
 # A session as the request phase left it, with the sign-ins of the given
-# states in progress.
+# states in progress. Each sign-in is in OmniAuth's omniauth.sign_ins,
+# with its origin and PKCE verifier, as this gem stores it now, and in
+# omniauth.oauth2, with its redirect URI and verifier, as versions before
+# 1fa07c2 stored it, so a baseline from before then finds it too. Drop
+# omniauth.oauth2 once Duel's baseline is past 1fa07c2.
 def session_with_sign_ins(states, pkce: false)
   oauth2 = {}
   sign_ins = {}
   states.each_with_index do |state, i|
-    sign_in = {"redirect_uri" => REDIRECT_URI}
-    sign_in["pkce_verifier"] = format("%0128x", i) if pkce
-    oauth2[state] = sign_in
-    sign_ins[state] = {"origin" => "https://app.example.com/dashboard", "params" => {}}
+    verifier = format("%043x", i)
+    sign_ins[state] = {"origin" => "https://app.example.com/dashboard"}
+    sign_ins[state]["pkce_verifier"] = verifier if pkce
+    oauth2[state] = {"redirect_uri" => REDIRECT_URI}
+    oauth2[state]["pkce_verifier"] = verifier if pkce
   end
   {"omniauth.oauth2" => oauth2, "omniauth.sign_ins" => sign_ins}
 end
