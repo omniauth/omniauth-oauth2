@@ -9,6 +9,17 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep at most 3 sign-ins in progress instead of 5, and make the PKCE
+  verifier 32 random bytes in base64url, 43 characters, the shortest
+  RFC 7636 allows, instead of 128 hex characters. With PKCE, about 4
+  abandoned sign-ins overflowed Rails' 4 KB cookie session, and the next
+  sign-in failed with `ActionDispatch::Cookies::CookieOverflow`. Three
+  sign-ins with an origin now take about 2.8 KB of an encrypted Rails
+  session cookie, where five took about 5 KB.
+  ([#195](https://github.com/omniauth/omniauth-oauth2/issues/195#issuecomment-6850392670))
+
 ## [1.10.0] - 2026-10-22
 
 ### Added

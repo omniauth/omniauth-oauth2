@@ -538,7 +538,8 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
 
     it "keeps the latest #{OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS}, dropping the oldest" do
       session = {}
-      states = Array.new(6) { start_sign_in(session)["state"] }
+      expect(OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS).to eq(3)
+      states = Array.new(4) { start_sign_in(session)["state"] }
       expect(session["omniauth.oauth2"].keys).to eq(states.drop(1))
       finish_sign_in(session, states.first)
       expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
@@ -672,11 +673,12 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
   context "with PKCE" do
     let(:options) { {:pkce => true} }
 
-    it "sends the S256 challenge for a 64-byte verifier it stores in the session" do
+    it "sends the S256 challenge for a 43-character verifier it stores in the session" do
       session = {}
       query = authorize_query(session)
       verifier = session.fetch("omniauth.pkce.verifier")
-      expect(verifier).to match(/\A\h{128}\z/)
+      expect(verifier).to match(/\A[A-Za-z0-9_-]{43}\z/)
+      expect(Base64.urlsafe_decode64(verifier).bytesize).to eq(32)
       expect(query).to include("code_challenge" => Base64.urlsafe_encode64(Digest::SHA256.digest(verifier), :padding => false), "code_challenge_method" => "S256")
     end
 

@@ -19,9 +19,11 @@ module OmniAuth
       end
 
       # How many sign-ins can be in progress at once, for example in several
-      # tabs. Starting another drops the oldest. Each one adds about 300
-      # bytes to the session, which may be a 4 KB cookie.
-      MAX_STORED_SIGN_INS = 5
+      # tabs. Starting another drops the oldest. With OmniAuth's origin and
+      # params, and the encoding of a Rails cookie session, each one adds
+      # about 500 bytes with PKCE to the session, which may be a 4 KB
+      # cookie.
+      MAX_STORED_SIGN_INS = 3
 
       args %i[client_id client_secret]
 
@@ -178,8 +180,10 @@ module OmniAuth
         return {} unless options.pkce
 
         # A fresh verifier for every authorization request, as RFC 7636
-        # requires: https://tools.ietf.org/html/rfc7636#section-4.1
-        verifier = SecureRandom.hex(64)
+        # requires: https://tools.ietf.org/html/rfc7636#section-4.1. Its 32
+        # random bytes encode to 43 characters, the shortest it allows,
+        # which keeps the session small.
+        verifier = SecureRandom.urlsafe_base64(32)
         session["omniauth.pkce.verifier"] = verifier
 
         # NOTE: see https://tools.ietf.org/html/rfc7636#appendix-A
