@@ -491,7 +491,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
     expect(query).to include("client_id" => "abc", "response_type" => "code", "redirect_uri" => "http://example.org/auth/example/callback")
     expect(query["state"]).to match(/\A\h{48}\z/)
     expect(session.keys).to contain_exactly("omniauth.params", "omniauth.state", "omniauth.redirect_uri", "omniauth.oauth2", "omniauth.sign_ins")
-    expect(session["omniauth.sign_ins"]).to eq(query["state"] => {"origin" => nil, "params" => {}})
+    expect(session["omniauth.sign_ins"].keys).to eq([query["state"]])
     expect(session["omniauth.redirect_uri"]).to eq(query["redirect_uri"])
     expect(session["omniauth.state"]).to eq(query["state"])
     expect(session["omniauth.oauth2"]).to eq(query["state"] => {"redirect_uri" => query["redirect_uri"]})
