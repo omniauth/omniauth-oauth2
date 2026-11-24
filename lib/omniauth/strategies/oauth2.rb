@@ -18,12 +18,13 @@ module OmniAuth
         Strategy.included(subclass)
       end
 
-      # How many sign-ins can be in progress at once, for example in several
-      # tabs. Starting another drops the oldest. With OmniAuth's origin and
-      # params, and the encoding of a Rails cookie session, each one adds
-      # about 500 bytes with PKCE to the session, which may be a 4 KB
-      # cookie.
-      MAX_STORED_SIGN_INS = 3
+      # How many sign-ins can be in progress at once by default, for example
+      # in several tabs. Starting another drops the oldest. Set
+      # OmniAuth.config.max_remembered_sign_ins to keep more or fewer: with
+      # OmniAuth's origin and params, and the encoding of a Rails cookie
+      # session, each one adds about 500 bytes with PKCE to the session,
+      # which may be a 4 KB cookie.
+      MAX_STORED_SIGN_INS = OmniAuth::Strategy::SignIns::MAX_REMEMBERED_SIGN_INS
 
       args %i[client_id client_secret]
 
@@ -146,7 +147,7 @@ module OmniAuth
         sign_ins = stored_sign_ins
         sign_ins.delete(state)
         sign_ins[state] = sign_in
-        session["omniauth.oauth2"] = sign_ins.to_a.last(MAX_STORED_SIGN_INS).to_h
+        session["omniauth.oauth2"] = sign_ins.to_a.last(OmniAuth.config.max_remembered_sign_ins).to_h
       end
 
       # What the request phase stored for this callback's state, removed from

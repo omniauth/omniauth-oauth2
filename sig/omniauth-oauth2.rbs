@@ -53,8 +53,9 @@ module OmniAuth
       # read it.
       attr_accessor access_token: ::OAuth2::AccessToken
 
-      # How many sign-ins can be in progress at once. Starting another drops
-      # the oldest.
+      # How many sign-ins can be in progress at once by default, which
+      # OmniAuth.config.max_remembered_sign_ins changes. Starting another
+      # drops the oldest.
       MAX_STORED_SIGN_INS: Integer
 
       # What the request phase stored for a sign-in: "state",
