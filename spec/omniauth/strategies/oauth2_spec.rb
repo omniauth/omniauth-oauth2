@@ -536,7 +536,7 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       expect(session["omniauth.oauth2"]).to eq({})
     end
 
-    it "keeps the latest #{OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS}, dropping the oldest" do
+    it "keeps the latest #{OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS} by default, dropping the oldest" do
       session = {}
       expect(OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS).to eq(3)
       states = Array.new(4) { start_sign_in(session)["state"] }
@@ -545,6 +545,26 @@ describe "OmniAuth::Strategies::OAuth2 request and callback", :mutant_expression
       expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
       finish_sign_in(session, states[1])
       expect(last_request.env["omniauth.error.type"]).to be_nil
+    end
+
+    context "with OmniAuth.config.max_remembered_sign_ins set" do
+      around do |example|
+        max = OmniAuth.config.max_remembered_sign_ins
+        OmniAuth.config.max_remembered_sign_ins = 1
+        example.run
+      ensure
+        OmniAuth.config.max_remembered_sign_ins = max
+      end
+
+      it "keeps that many, dropping the oldest" do
+        session = {}
+        states = Array.new(2) { start_sign_in(session)["state"] }
+        expect(session["omniauth.oauth2"].keys).to eq([states.last])
+        finish_sign_in(session, states.first)
+        expect(last_request.env["omniauth.error.type"]).to eq(:csrf_detected)
+        finish_sign_in(session, states.last)
+        expect(last_request.env["omniauth.error.type"]).to be_nil
+      end
     end
 
     it "accepts each state only once" do

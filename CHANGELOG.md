@@ -9,6 +9,15 @@ Changes before 1.8.0 were originally published only on [GitHub Releases](https:/
 
 ## [Unreleased]
 
+### Changed
+
+- Keep as many sign-ins in progress at once as
+  `OmniAuth.config.max_remembered_sign_ins`, which OmniAuth 2.4.2 added
+  for its own `omniauth.sign_ins`, instead of always 3.
+  `MAX_STORED_SIGN_INS` is now that setting's default. An app whose cookie
+  session is still too full can set it to 1. Requires omniauth 2.4.2 or
+  later.
+
 ## [1.10.1] - 2026-11-14
 
 ### Fixed
